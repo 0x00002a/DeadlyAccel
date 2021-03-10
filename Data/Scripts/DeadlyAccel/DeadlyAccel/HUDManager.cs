@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Text;
 using Draygo.API;
 using VRageMath;
+using Digi;
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Natomic.DeadlyAccel
 {
@@ -17,9 +19,8 @@ namespace Natomic.DeadlyAccel
         }
         private void OnHudInit()
         {
-            message_ = new HudAPIv2.HUDMessage(text_, txt_origin_);
-
-
+            message_ = new HudAPIv2.HUDMessage(text_, txt_origin_, null, -1, 1.5);
+            message_.InitialColor = Color.Red;
         }
         public void ShowWarning()
         {
@@ -36,12 +37,16 @@ namespace Natomic.DeadlyAccel
 
         public void Draw()
         {
-            message_.Visible = text_.Length > 0;
+            if (message_ != null)
+            {
+              //  Log.Info($"Updating: {message_ == null}, {text_ == null}");
+                message_.Visible = text_.Length > 0;
+            }
         }
 
         private HudAPIv2.HUDMessage message_;
         private HudAPIv2 api_handle_;
-        private Vector2D txt_origin_ = new Vector2D(0.1, 0.5); // Center vertically and slightly in horizontal
+        private Vector2D txt_origin_ = new Vector2D(-0.3, 0.5); // Top center
         private StringBuilder text_ = new StringBuilder("");
 
     }

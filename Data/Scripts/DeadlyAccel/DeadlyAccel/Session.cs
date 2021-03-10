@@ -28,7 +28,7 @@ namespace Natomic.DeadlyAccel
     {
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
-        private int ticks_since_cache_update_ = 0;
+        private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
         private readonly Random rand = new Random();
@@ -169,13 +169,12 @@ namespace Natomic.DeadlyAccel
         {
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
 
-            ++ticks_since_cache_update_;
+            ++tick;
             try // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (ticks_since_cache_update_ >= TICKS_PER_CACHE_UPDATE)
+                if (tick % TICKS_PER_CACHE_UPDATE == 0)
                 {
-                    ticks_since_cache_update_ = 0;
                     UpdatePlayersCache();
                 }
 
@@ -236,9 +235,18 @@ namespace Natomic.DeadlyAccel
 
         public override void Draw()
         {
-            // gets called 60 times a second after all other update methods, regardless of framerate, game pause or MyUpdateOrder.
-            // NOTE: this is the only place where the camera matrix (MyAPIGateway.Session.Camera.WorldMatrix) is accurate, everywhere else it's 1 frame behind.
-            hud.Draw();
+            try
+            {
+                if (tick % 10 == 0)
+                {
+                    // gets called 60 times a second after all other update methods, regardless of framerate, game pause or MyUpdateOrder.
+                    // NOTE: this is the only place where the camera matrix (MyAPIGateway.Session.Camera.WorldMatrix) is accurate, everywhere else it's 1 frame behind.
+                    hud.Draw();
+                }
+            } catch(Exception e)
+            {
+                Log.Error($"Failed to draw: {e}", "Failed to draw, see log for details");
+            }
         }
 
         public override void SaveData()
