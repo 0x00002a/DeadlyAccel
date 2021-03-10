@@ -39,7 +39,6 @@ namespace Natomic.DeadlyAccel
         {
             if (message_ != null)
             {
-              //  Log.Info($"Updating: {message_ == null}, {text_ == null}");
                 message_.Visible = text_.Length > 0;
             }
         }

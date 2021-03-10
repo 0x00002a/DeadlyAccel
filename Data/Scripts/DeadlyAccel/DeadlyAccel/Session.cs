@@ -33,7 +33,7 @@ namespace Natomic.DeadlyAccel
 
         private readonly Random rand = new Random();
         private readonly List<IMyPlayer> players_ = new List<IMyPlayer>();
-        private readonly Dictionary<string, float> cushening_mulipliers_ = new Dictionary<string, float>();
+        private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
         private Settings settings_ = null;
         private HUDManager hud = new HUDManager();
 
@@ -89,21 +89,23 @@ namespace Natomic.DeadlyAccel
                     }
                 },
                 IgnoreJetpack = true,
+                SafeMaximum = 9.81f * 3, // 3g's
+                DamageScaleExponent = 3,
             };
             settings_ = Settings.TryLoad(DefaultSettings);
             settings_.Save();
 
-            BuildCusheningCache(settings_);
+            BuildCushioningCache(settings_);
         }
-        private string FormatCushenLookup(string typeid, string subtypeid)
+        private string FormatCushionLookup(string typeid, string subtypeid)
         {
             return $"{typeid}-{subtypeid}";
         }
-        private void BuildCusheningCache(Settings from)
+        private void BuildCushioningCache(Settings from)
         {
             foreach(var cushen_val in from.CushioningBlocks)
             {
-                cushening_mulipliers_.Add(FormatCushenLookup(cushen_val.TypeId,cushen_val.SubtypeId), cushen_val.CushenFactor);
+                cushioning_mulipliers_.Add(FormatCushionLookup(cushen_val.TypeId,cushen_val.SubtypeId), cushen_val.CushenFactor);
             }
 
         }
@@ -165,6 +167,45 @@ namespace Natomic.DeadlyAccel
         {
             return val > upper ? upper : val < lower ? lower : val;
         }
+        private void PlayersUpdate()
+        {
+            float safe_max = settings_.SafeMaximum;
+
+            foreach (var player in players_)
+            {
+
+                if (!player.Character.IsDead)
+                {
+                    var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
+                    if (jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack)
+                    {
+                        continue;
+                    }
+                    var parent = player.Character.Parent as IMyCubeBlock;
+                    var accel = CalcCharAccel(player, parent);
+                    var cushionFactor = 0f;
+
+                    if (parent != null)
+                    {
+                        cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
+                    }
+                    
+                    if (accel > settings_.SafeMaximum)
+                    {
+                        var dmg = Math.Pow((accel - settings_.SafeMaximum), settings_.DamageScaleExponent) % 10;
+                        dmg *= (1 - cushionFactor);
+                        player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+
+                        hud.ShowWarning();
+                    }
+                    else
+                    {
+                        hud.ClearWarning();
+                    }
+                }
+            }
+
+        }
         public override void UpdateAfterSimulation()
         {
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
@@ -178,54 +219,7 @@ namespace Natomic.DeadlyAccel
                     UpdatePlayersCache();
                 }
 
-                const float g = 9.80665f;
-                const float safe_max = 3 * g;
-                const float death_threshold = 10 * g;
-
-                foreach (var player in players_)
-                {
-
-                    if (!player.Character.IsDead)
-                    {
-                        var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                        if (jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack)
-                        {
-                            continue;
-                        }
-                        var parent = player.Character.Parent as IMyCubeBlock;
-                        var accel = CalcCharAccel(player, parent);
-                        var cushenFactor = 0f;
-
-                        if (parent != null)
-                        {
-                            cushening_mulipliers_.TryGetValue(FormatCushenLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushenFactor);
-                            /* g x = x
-                             * f x y = y^x
-                             * h x y = (g x) - (f x y)
-                             * y = cushen factor 
-                             * x = accel
-                             * Note: This only effects insta-death threshold
-                             */
-                            accel -= (float)Math.Pow(cushenFactor, accel);
-                        }
-                        /* 
-                         * Danger zone is >3, around 10g your gonna have a hard time
-                         * Safe is [0, 3] (duh)
-                         */
-                        if (accel > safe_max)
-                        {
-                            var max = (int)(100 * (1f - cushenFactor));
-                            var num = (float)rand.Next((int)Clamp(0, max, accel - death_threshold), max) / 100; // Max dmg, 1 per tick or 60 per second (have to be _really_ unlucky tho)
-                            player.Character.DoDamage(num, MyStringHash.GetOrCompute("F = ma"), true);
-
-                            hud.ShowWarning();
-                        } else
-                        {
-                            hud.ClearWarning();
-                        }
-                    }
-                }
-            }
+           }
             catch (Exception e) // NOTE: never use try-catch for code flow or to ignore errors! catching has a noticeable performance impact.
             {
                 Log.Error(e, e.Message);
