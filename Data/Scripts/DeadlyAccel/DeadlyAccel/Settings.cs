@@ -28,6 +28,9 @@ namespace Natomic.DeadlyAccel
         [ProtoMember(2)]
         public bool IgnoreJetpack; // Whether acceleration due to jetpacks should be ignored 
 
+        [ProtoMember(3)]
+        public float SafeMaximum; // Maximum safe acceleration before taking damage
+
         public override string ToString()
         {
             return MyAPIGateway.Utilities.SerializeToXML(this);
