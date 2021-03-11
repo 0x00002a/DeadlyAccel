@@ -9,9 +9,10 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum; // required for MyTransparentGeometry/MySimpleObjectDraw to be able to set blend type.
 using Digi;
 using Sandbox.Game.Entities.Character.Components;
+
+using Net = SENetworkAPI;
 
 namespace Natomic.DeadlyAccel
 {
@@ -28,14 +29,18 @@ namespace Natomic.DeadlyAccel
     {
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
+        private const ushort ComChannelId = 15128;
+        private const string ModName = "Deadly Accelleration";
+
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
         private readonly Random rand = new Random();
         private readonly List<IMyPlayer> players_ = new List<IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
-        private Settings settings_ = null;
-        private HUDManager hud = new HUDManager();
+        private Settings Settings_ => net_settings_.Value;
+        private Net.NetSync<Settings> net_settings_;
+        private readonly HUDManager hud = new HUDManager();
 
 
         public override void LoadData()
@@ -53,6 +58,17 @@ namespace Natomic.DeadlyAccel
 
             Instance = this;
 
+            if (!Net.NetworkAPI.IsInitialized)
+            {
+                Net.NetworkAPI.Init(ComChannelId, ModName);
+            }
+
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
+
+            BuildCushioningCache(Settings_);
+        }
+        private Settings LoadSettings()
+        {
             var DefaultSettings = new Settings()
             {
                 CushioningBlocks = new List<Settings.CusheningEntry>()
@@ -92,10 +108,18 @@ namespace Natomic.DeadlyAccel
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 20f,
             };
-            settings_ = Settings.TryLoad(DefaultSettings);
-            settings_.Save();
 
-            BuildCushioningCache(settings_);
+            if (!MyAPIGateway.Multiplayer.IsServer)
+            {
+                return DefaultSettings;
+            }
+            else
+            {
+                var settings = Settings.TryLoad(DefaultSettings);
+                settings.Save();
+                return settings;
+            }
+
         }
         private string FormatCushionLookup(string typeid, string subtypeid)
         {
@@ -179,7 +203,7 @@ namespace Natomic.DeadlyAccel
                 {
                     var parent = player.Character.Parent as IMyCubeBlock;
                     var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (parent != null && !(jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack))
+                    if (parent != null && !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
                     {
                         var accel = CalcCharAccel(player, parent);
                         var cushionFactor = 0f;
@@ -189,9 +213,9 @@ namespace Natomic.DeadlyAccel
                             cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
                         }
 
-                        if (accel > settings_.SafeMaximum)
+                        if (accel > Settings_.SafeMaximum)
                         {
-                            var dmg = Math.Log((accel - settings_.SafeMaximum), settings_.DamageScaleBase) % 3 / 10;
+                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase) % 3 / 10;
                             dmg *= (1 - cushionFactor);
                             player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 

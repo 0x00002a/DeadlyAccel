@@ -94,10 +94,6 @@ namespace Natomic.DeadlyAccel
 
         public static Settings TryLoad(Settings fallback)
         {
-            if (!MyAPIGateway.Multiplayer.IsServer)
-            {
-                return fallback;
-            }
 
             try
             {
