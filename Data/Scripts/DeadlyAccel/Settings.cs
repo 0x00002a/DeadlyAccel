@@ -14,7 +14,7 @@ namespace Natomic.DeadlyAccel
         public class CusheningEntry
         {
             [ProtoMember(1)]
-            public string TypeId = "Cockpit";
+            public string TypeId = "MyObjectBuilder_Cockpit";
             [ProtoMember(2)]
             public string SubtypeId;
             [ProtoMember(3)]

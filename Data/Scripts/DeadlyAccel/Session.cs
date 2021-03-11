@@ -203,7 +203,7 @@ namespace Natomic.DeadlyAccel
                 {
                     var parent = player.Character.Parent as IMyCubeBlock;
                     var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (parent != null && !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
+                    if (parent != null || !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
                     {
                         var accel = CalcCharAccel(player, parent);
                         var cushionFactor = 0f;
@@ -215,7 +215,7 @@ namespace Natomic.DeadlyAccel
 
                         if (accel > Settings_.SafeMaximum)
                         {
-                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase) % 3 / 10;
+                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase) % 3;
                             dmg *= (1 - cushionFactor);
                             player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 
