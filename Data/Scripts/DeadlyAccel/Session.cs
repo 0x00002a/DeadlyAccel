@@ -173,6 +173,7 @@ namespace Natomic.DeadlyAccel
         {
             var physics = player.Character.Physics;
             var worldPos = player.Character.GetPosition();
+            var com = player.Character.WorldAABB.Center;
             if (parent != null)
             {
                 var grid = parent.CubeGrid;
@@ -185,9 +186,11 @@ namespace Natomic.DeadlyAccel
                 {
                     physics = grid.Physics;
                     worldPos = grid.GetPosition();
+                    com = physics.CenterOfMassWorld;
                 }
             }
-            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - physics.CenterOfMassWorld)).Length() : 0;
+
+            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - com)).Length() : 0;
 
         }
         private float Clamp(float lower, float upper, float val)
@@ -201,10 +204,11 @@ namespace Natomic.DeadlyAccel
 
                 if (!player.Character.IsDead)
                 {
-                    var parent = player.Character.Parent as IMyCubeBlock;
+                    var parentBase = player.Character.Parent;
                     var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (parent != null || !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
+                    if (parentBase != null || !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
                     {
+                        var parent = parentBase as IMyCubeBlock;
                         var accel = CalcCharAccel(player, parent);
                         var cushionFactor = 0f;
 
