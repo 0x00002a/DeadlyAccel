@@ -163,7 +163,7 @@ namespace Natomic.DeadlyAccel
                     worldPos = grid.GetPosition();
                 }
             }
-            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - physics.CenterOfMassWorld)).Length();
+            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - physics.CenterOfMassWorld)).Length() : 0;
 
         }
         private float Clamp(float lower, float upper, float val)
@@ -179,31 +179,29 @@ namespace Natomic.DeadlyAccel
                 {
                     var parent = player.Character.Parent as IMyCubeBlock;
                     var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (parent == null && jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack)
+                    if (parent != null && !(jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack))
                     {
-                        continue;
-                    }
-                    var accel = CalcCharAccel(player, parent);
-                    var cushionFactor = 0f;
+                        var accel = CalcCharAccel(player, parent);
+                        var cushionFactor = 0f;
 
-                    if (parent != null)
-                    {
-                        cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
-                    }
-                    
-                    if (accel > settings_.SafeMaximum)
-                    {
-                        var dmg = Math.Log((accel - settings_.SafeMaximum), settings_.DamageScaleBase) % 3 / 10;
-                        dmg *= (1 - cushionFactor);
-                        player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+                        if (parent != null)
+                        {
+                            cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
+                        }
 
-                        hud.ShowWarning();
-                    }
-                    else
-                    {
-                        hud.ClearWarning();
+                        if (accel > settings_.SafeMaximum)
+                        {
+                            var dmg = Math.Log((accel - settings_.SafeMaximum), settings_.DamageScaleBase) % 3 / 10;
+                            dmg *= (1 - cushionFactor);
+                            player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+
+                            hud.ShowWarning();
+                            continue;
+                        }
                     }
                 }
+
+                hud.ClearWarning();
             }
 
         }
@@ -233,13 +231,11 @@ namespace Natomic.DeadlyAccel
         {
             try
             {
-                if (tick % 10 == 0)
-                {
-                    // gets called 60 times a second after all other update methods, regardless of framerate, game pause or MyUpdateOrder.
-                    // NOTE: this is the only place where the camera matrix (MyAPIGateway.Session.Camera.WorldMatrix) is accurate, everywhere else it's 1 frame behind.
-                    hud.Draw();
-                }
-            } catch(Exception e)
+                // gets called 60 times a second after all other update methods, regardless of framerate, game pause or MyUpdateOrder.
+                // NOTE: this is the only place where the camera matrix (MyAPIGateway.Session.Camera.WorldMatrix) is accurate, everywhere else it's 1 frame behind.
+                hud.Draw();
+            }
+            catch (Exception e)
             {
                 Log.Error($"Failed to draw: {e}", "Failed to draw, see log for details");
             }
