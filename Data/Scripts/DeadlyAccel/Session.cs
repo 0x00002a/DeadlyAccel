@@ -30,7 +30,7 @@ namespace Natomic.DeadlyAccel
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
         private const ushort ComChannelId = 15128;
-        private const string ModName = "Deadly Accelleration";
+        private const string ModName = "Deadly Acceleration";
 
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
@@ -215,7 +215,8 @@ namespace Natomic.DeadlyAccel
 
                         if (accel > Settings_.SafeMaximum)
                         {
-                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase) % 3;
+                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
+                            dmg *= 10; // Scale it up since only run every 10 ticks
                             dmg *= (1 - cushionFactor);
                             player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 
@@ -241,9 +242,12 @@ namespace Natomic.DeadlyAccel
                 {
                     UpdatePlayersCache();
                 }
-                PlayersUpdate();
+                if (tick % 10 == 0)
+                {
+                    PlayersUpdate();
+                }
+            }
 
-           }
             catch (Exception e) // NOTE: never use try-catch for code flow or to ignore errors! catching has a noticeable performance impact.
             {
                 Log.Error(e, e.Message);
