@@ -18,7 +18,7 @@ namespace Natomic.DeadlyAccel
             [ProtoMember(2)]
             public string SubtypeId;
             [ProtoMember(3)]
-            public float CushenFactor;
+            public float CushionFactor;
         }
         private const string Filename = "DeadlyAccel.cfg";
 
@@ -30,6 +30,9 @@ namespace Natomic.DeadlyAccel
 
         [ProtoMember(3)]
         public float SafeMaximum; // Maximum safe acceleration before taking damage
+
+        [ProtoMember(4)]
+        public float DamageScaleBase;
 
         public override string ToString()
         {

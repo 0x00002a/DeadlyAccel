@@ -60,37 +60,37 @@ namespace Natomic.DeadlyAccel
                     new Settings.CusheningEntry()
                     {
                         SubtypeId = "PassengerSeatLarge",
-                        CushenFactor = 0.6f,
+                        CushionFactor = 0.2f,
                     },
                     new Settings.CusheningEntry()
                     {
                         SubtypeId = "PassengerSeatSmall",
-                        CushenFactor = 0.55f,
+                        CushionFactor = 0.15f,
                     },
                     new Settings.CusheningEntry()
                     {
                         SubtypeId = "LargeBlockCockpit",
-                        CushenFactor = 0.7f,
+                        CushionFactor = 0.5f,
                     },
                     new Settings.CusheningEntry()
                     {
                         SubtypeId = "SmallBlockCockpit",
-                        CushenFactor = 0.65f,
+                        CushionFactor = 0.5f,
                     },
                     new Settings.CusheningEntry()
                     {
-                        SubtypeId = "LargeBlockCockpitSeat",
-                        CushenFactor = 0.7f,
+                        SubtypeId = "CockpitOpen",
+                        CushionFactor = 0.2f,
                     },
                     new Settings.CusheningEntry()
                     {
                         SubtypeId = "DBSmallBlockFighterCockpit",
-                        CushenFactor = 0.9f,
+                        CushionFactor = 0.9f,
                     }
                 },
                 IgnoreJetpack = true,
-                SafeMaximum = 9.81f * 3, // 3g's
-                DamageScaleExponent = 3,
+                SafeMaximum = 9.81f * 5, // 5g's
+                DamageScaleBase = 20f,
             };
             settings_ = Settings.TryLoad(DefaultSettings);
             settings_.Save();
@@ -105,7 +105,7 @@ namespace Natomic.DeadlyAccel
         {
             foreach(var cushen_val in from.CushioningBlocks)
             {
-                cushioning_mulipliers_.Add(FormatCushionLookup(cushen_val.TypeId,cushen_val.SubtypeId), cushen_val.CushenFactor);
+                cushioning_mulipliers_.Add(FormatCushionLookup(cushen_val.TypeId,cushen_val.SubtypeId), cushen_val.CushionFactor);
             }
 
         }
@@ -147,6 +147,8 @@ namespace Natomic.DeadlyAccel
         }
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
+            var physics = player.Character.Physics;
+            var worldPos = player.Character.GetPosition();
             if (parent != null)
             {
                 var grid = parent.CubeGrid;
@@ -157,10 +159,11 @@ namespace Natomic.DeadlyAccel
                 }
                 else
                 {
-                    return grid.Physics.LinearAcceleration.Length();
+                    physics = grid.Physics;
+                    worldPos = grid.GetPosition();
                 }
             }
-            return player.Character.Physics.LinearAcceleration.Length();
+            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - physics.CenterOfMassWorld)).Length();
 
         }
         private float Clamp(float lower, float upper, float val)
@@ -169,19 +172,17 @@ namespace Natomic.DeadlyAccel
         }
         private void PlayersUpdate()
         {
-            float safe_max = settings_.SafeMaximum;
-
             foreach (var player in players_)
             {
 
                 if (!player.Character.IsDead)
                 {
+                    var parent = player.Character.Parent as IMyCubeBlock;
                     var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack)
+                    if (parent == null && jetpack != null && jetpack.FinalThrust.Length() > 0 && settings_.IgnoreJetpack)
                     {
                         continue;
                     }
-                    var parent = player.Character.Parent as IMyCubeBlock;
                     var accel = CalcCharAccel(player, parent);
                     var cushionFactor = 0f;
 
@@ -192,7 +193,7 @@ namespace Natomic.DeadlyAccel
                     
                     if (accel > settings_.SafeMaximum)
                     {
-                        var dmg = Math.Pow((accel - settings_.SafeMaximum), settings_.DamageScaleExponent) % 10;
+                        var dmg = Math.Log((accel - settings_.SafeMaximum), settings_.DamageScaleBase) % 3 / 10;
                         dmg *= (1 - cushionFactor);
                         player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 
@@ -218,6 +219,7 @@ namespace Natomic.DeadlyAccel
                 {
                     UpdatePlayersCache();
                 }
+                PlayersUpdate();
 
            }
             catch (Exception e) // NOTE: never use try-catch for code flow or to ignore errors! catching has a noticeable performance impact.
