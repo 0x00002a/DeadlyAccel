@@ -44,6 +44,13 @@ This is a whishlist of what I _might_ do with this mod, no promises:
 This mod is partially compatable with modded cockpits. While by default modded cockpits will have no cushioning applied, 
 they can be added to the config same as vanilla.
 
+
+### Known bugs (buyer beware!)
+
+- If your jetpack has _any_ thrust at all before magbooting or turning it off in gravity, you will take no damage from acceleration 
+    (whereas players on the same grid in a cockpit will). The fix for now is to disable `IgnoreJetpack`, however:
+- If you disable `IgnoreJetpack`, walking will slowly kill you, ramps will quickly kill you, and bumping into things may insta-kill you
+
 ## Configuration 
 
 - `<CushioningBlocks>`: List of values for cushioning factors. 
