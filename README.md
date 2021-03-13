@@ -76,3 +76,6 @@ Please contact the respective authors for redistribution rights for these parts 
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
 
+### Source
+
+The full source code for this mod can be found here: https://github.com/0x00002a/DeadlyAccel
