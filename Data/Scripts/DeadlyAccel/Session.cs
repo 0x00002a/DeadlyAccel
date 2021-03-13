@@ -29,8 +29,13 @@ using VRage.ModAPI;
 using VRage.Utils;
 using Digi;
 using Sandbox.Game.Entities.Character.Components;
+using Sandbox.Game.Entities.Character;
 
 using Net = SENetworkAPI;
+using VRage.Input;
+using VRageMath;
+using System.Linq;
+using VRage.Game.ModAPI.Interfaces;
 
 namespace Natomic.DeadlyAccel
 {
@@ -211,10 +216,94 @@ namespace Natomic.DeadlyAccel
             return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - com)).Length() : 0;
 
         }
+        private float EntityAccel(IMyEntity entity)
+        {
+            var physics = entity?.Physics;
+            if (physics == null || physics.CenterOfMassWorld == null)
+            {
+                throw new ArgumentException("EntityAccel passed entity with invalid physics");
+            }
+            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - physics.CenterOfMassWorld)).Length();
+
+
+
+        }
         private float Clamp(float lower, float upper, float val)
         {
             return val > upper ? upper : val < lower ? lower : val;
         }
+
+        private bool AccelNotDueToJetpack(IMyCharacter character)
+        {
+            var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
+            return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
+        }
+        private bool PlayerTryingToMove()
+        {
+            if (!MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated)
+            {
+                return MyAPIGateway.Input.GetPositionDelta().LengthSquared() > 0;
+            }
+            return false;
+        }
+
+        private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
+        {
+            var cushionFactor = 0f;
+
+            if (parent != null)
+            {
+                cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
+            }
+
+            if (accel > Settings_.SafeMaximum)
+            {
+                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
+                //dmg *= 10; // Scale it up since only run every 10 ticks
+                dmg *= (1 - cushionFactor);
+                player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+
+                return true;
+            }
+            return false;
+
+        }
+        private IMyEntity GridStandingOn(IMyCharacter character)
+        {
+            var GROUND_SEARCH = 2;
+            var pos = character.PositionComp.GetPosition();
+            var worldRef = character.PositionComp.WorldMatrixRef;
+
+            var up = pos + worldRef.Up * 0.5;
+            var down = up + worldRef.Down * GROUND_SEARCH;
+            var forward = worldRef.Forward * 0.2;
+            var back = -forward;
+
+            var hits1 = new List<IHitInfo>();
+            var hits2 = new List<IHitInfo>();
+
+
+            MyAPIGateway.Physics.CastRay(up, down, hits2, 18);
+            hits1.AddRange(hits2);
+            MyAPIGateway.Physics.CastRay(up + forward, down + forward, hits2, 18);
+            hits1.AddRange(hits2);
+            MyAPIGateway.Physics.CastRay(up + back, down + back, hits2, 18);
+            hits1.AddRange(hits2);
+
+            var validHit = hits1.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
+            if (validHit != null)
+            {
+                var entity = validHit.HitEntity.GetTopMostParent();
+                
+                if (Vector3D.DistanceSquared(validHit.Position, up) < (double)GROUND_SEARCH * GROUND_SEARCH)
+                {
+                    return entity;
+                }
+                
+            }
+            return null;
+        }
+
         private void PlayersUpdate()
         {
             foreach (var player in players_)
@@ -222,26 +311,27 @@ namespace Natomic.DeadlyAccel
 
                 if (!player.Character.IsDead)
                 {
+                    if (tick % 60 == 0)
+                    {
+
+                    }
                     var parentBase = player.Character.Parent;
-                    var jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
-                    if (parentBase != null || !(jetpack != null && jetpack.FinalThrust.Length() > 0 && Settings_.IgnoreJetpack))
+
+
+
+                    if ((parentBase != null || !(AccelNotDueToJetpack(player.Character) && Settings_.IgnoreJetpack)))
                     {
                         var parent = parentBase as IMyCubeBlock;
                         var accel = CalcCharAccel(player, parent);
-                        var cushionFactor = 0f;
-
-                        if (parent != null)
+                        var gridOn = GridStandingOn(player.Character); // This is expensive!
+                        if (gridOn != null)
                         {
-                            cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
+                            accel = EntityAccel(gridOn);
                         }
 
-                        if (accel > Settings_.SafeMaximum)
-                        {
-                            var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
-                            //dmg *= 10; // Scale it up since only run every 10 ticks
-                            dmg *= (1 - cushionFactor);
-                            player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 
+                        if (ApplyAccelDamage(parent, player, accel))
+                        {
                             hud.ShowWarning();
                             continue;
                         }
@@ -257,7 +347,8 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
 
             ++tick;
-            try // example try-catch for catching errors and notifying player, use only for non-critical code!
+            try 
+                // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
                 if (MyAPIGateway.Multiplayer.IsServer) {
