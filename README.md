@@ -47,3 +47,32 @@ they can be added to the config same as vanilla.
 					for someone in a futuristic space suit
 - `<DamageScaleBase>`: Base for logarithmic damage scaling. Default is 20, higher values mean less damage and slower scaling.
 
+## Reuse/Licensing 
+
+All of _my_ code in this repository/mod is licensed under the GNU GPLv3. Some parts of this code are not my own work and I cannot and do not relicense them.
+The parts of this code ***not*** licensed under the GNU GPv3 are listed below, if in doubt, all my code has the license at the top:
+
+- `Log.cs` (author Digi)
+- Anything in `SENetAPI` (SENetworkAPI)
+- Anything in `TextHudAPI` (TextHudAPI mod)
+
+Please contact the respective authors for redistribution rights for these parts of the mod. In regards to redistributing my code, read the license:
+
+```
+    DeadlyAccel Space Engineers mod
+    Copyright (C) 2021 Natasha England-Elbro
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+```
+

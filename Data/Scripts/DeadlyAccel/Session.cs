@@ -1,4 +1,22 @@
-﻿using System;
+﻿/* 
+ *  DeadlyAccel Space Engineers mod
+ *  Copyright (C) 2021 Natasha England-Elbro
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+using System;
 using System.Collections.Generic;
 using Sandbox.Definitions;
 using Sandbox.Game;
@@ -219,8 +237,8 @@ namespace Natomic.DeadlyAccel
 
                         if (accel > Settings_.SafeMaximum)
                         {
-                            var dmg = Math.Log((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
-                            dmg *= 10; // Scale it up since only run every 10 ticks
+                            var dmg = Math.Pow((accel - Settings_.SafeMaximum), 1.1/*Settings_.DamageScaleBase*/);
+                            //dmg *= 10; // Scale it up since only run every 10 ticks
                             dmg *= (1 - cushionFactor);
                             player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
 
