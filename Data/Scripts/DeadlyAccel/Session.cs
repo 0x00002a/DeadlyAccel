@@ -260,13 +260,15 @@ namespace Natomic.DeadlyAccel
             try // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (tick % TICKS_PER_CACHE_UPDATE == 0)
-                {
-                    UpdatePlayersCache();
-                }
-                if (tick % 10 == 0)
-                {
-                    PlayersUpdate();
+                if (MyAPIGateway.Multiplayer.IsServer) {
+                    if (tick % TICKS_PER_CACHE_UPDATE == 0)
+                    {
+                        UpdatePlayersCache();
+                    }
+                    if (tick % 10 == 0)
+                    {
+                        PlayersUpdate();
+                    }
                 }
             }
 
