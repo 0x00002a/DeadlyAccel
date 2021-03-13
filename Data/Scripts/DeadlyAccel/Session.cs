@@ -124,7 +124,7 @@ namespace Natomic.DeadlyAccel
                 },
                 IgnoreJetpack = true,
                 SafeMaximum = 9.81f * 5, // 5g's
-                DamageScaleBase = 20f,
+                DamageScaleBase = 1.1f,
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
@@ -237,7 +237,7 @@ namespace Natomic.DeadlyAccel
 
                         if (accel > Settings_.SafeMaximum)
                         {
-                            var dmg = Math.Pow((accel - Settings_.SafeMaximum), 1.1/*Settings_.DamageScaleBase*/);
+                            var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
                             //dmg *= 10; // Scale it up since only run every 10 ticks
                             dmg *= (1 - cushionFactor);
                             player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);

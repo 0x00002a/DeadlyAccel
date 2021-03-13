@@ -18,7 +18,7 @@ different cockpits offering more or less protection for your poor engineer again
 - Highly customisable 
 	- How much damage is reduced by for cockpits (cushioning)
 	- Safe point (when do you start taking damage)
-	- Scaling base (logarithmic base to use for damage scaling)
+	- Scaling base (exponent to use for damage scaling)
 	- Whether to ignore jetpack or not (vanilla jetpack exherts >3g of force when using dampers)
 - Warnings when exceeding limit (in case you didn't notice the red borders and sound effects)
 - Changes how you fight and build ships (no more 180 hairpins at 100m/s)
@@ -42,10 +42,10 @@ they can be added to the config same as vanilla.
 						Final damage per tick is multiplied by the 1 - cushioning value 
 						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%)
 - `<IgnoreJetpack>`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
-- `<SafeMaximum>`: Acceleration greater than this value will cause the character to take damage. Damage is logarithmically proportioanl to how far
+- `<SafeMaximum>`: Acceleration greater than this value will cause the character to take damage. Damage is expontential proportioanl to how far
 					the current acceleration is over this value. The default is 5g because I found that to be the most balanced and is reasonable I think 
-					for someone in a futuristic space suit
-- `<DamageScaleBase>`: Base for logarithmic damage scaling. Default is 20, higher values mean less damage and slower scaling.
+					for someone in a futuristic space suit (pilots can apparently survive up to 7g "safely" with proper support but I found this too hard to reach in vanilla)
+- `<DamageScaleBase>`: Exponent for damage scaling. Higher values means damage will increase faster further past the safe point 
 
 ## Reuse/Licensing 
 
