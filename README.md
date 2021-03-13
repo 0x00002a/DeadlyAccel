@@ -14,15 +14,18 @@ different cockpits offering more or less protection for your poor engineer again
 ## Features 
 
 - Death 
-- Both linear (forward, left, right, up, down) and angular (pitch, roll, yaw) acceleration is used
+- Both linear and angular acceleration is used, spinning too fast with gyros can also cause you to take damage 
 - Highly customisable 
-	- How much damage is reduced by for cockpits (cushioning)
-	- Safe point (when do you start taking damage)
-	- Scaling base (exponent to use for damage scaling)
-	- Whether to ignore jetpack or not (vanilla jetpack exherts >3g of force when using dampers)
 - Warnings when exceeding limit (in case you didn't notice the red borders and sound effects)
 - Changes how you fight and build ships (no more 180 hairpins at 100m/s)
 - Fighter cockpit is now actually useful (it has a _much_ heigher cushion effect allowing you to survive longer at high g)
+- Survival only (more an unplanned feature since you cannot take damage in creative)
+
+### A note on speed limits and balance
+
+This mod is usable with a 100m/s speed limit, but only really in fights, since a 5g acceleration will get you to 100m/s in ~2 seconds. Be aware, however, when 
+using modded thrusters or very fast ships since going too far over the safe point can kill you before you can react. This mod is currently only tested by me and therefore 
+probably not very balanced. I suggest tuning the config to match your personal tastes.
 
 ### Multiplayer
 
@@ -80,6 +83,9 @@ Please contact the respective authors for redistribution rights for these parts 
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 ```
+
+tl;dr Yes you can reupload part or all of it as long as you release all of the source including modifcations made, keep all existing license notices, and use the GPLv3
+license for any modifications.
 
 ### Source
 
