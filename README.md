@@ -24,6 +24,11 @@ different cockpits offering more or less protection for your poor engineer again
 - Changes how you fight and build ships (no more 180 hairpins at 100m/s)
 - Fighter cockpit is now actually useful (it has a _much_ heigher cushion effect allowing you to survive longer at high g)
 
+### Multiplayer
+
+This mod is **untested** in multiplayer. I intend to test it in future and it has a first-try implementation for networking in it but
+expect it to unexpectedly crash and burn if you try it outside singleplayer.
+
 ### Planned features
 
 This is a whishlist of what I _might_ do with this mod, no promises:
