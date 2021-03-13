@@ -65,6 +65,8 @@ namespace Natomic.DeadlyAccel
         private Net.NetSync<Settings> net_settings_;
         private readonly HUDManager hud = new HUDManager();
 
+        private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
+
 
         public override void LoadData()
         {
@@ -150,9 +152,9 @@ namespace Natomic.DeadlyAccel
         }
         private void BuildCushioningCache(Settings from)
         {
-            foreach(var cushen_val in from.CushioningBlocks)
+            foreach (var cushen_val in from.CushioningBlocks)
             {
-                cushioning_mulipliers_.Add(FormatCushionLookup(cushen_val.TypeId,cushen_val.SubtypeId), cushen_val.CushionFactor);
+                cushioning_mulipliers_.Add(FormatCushionLookup(cushen_val.TypeId, cushen_val.SubtypeId), cushen_val.CushionFactor);
             }
 
         }
@@ -268,29 +270,47 @@ namespace Natomic.DeadlyAccel
             return false;
 
         }
+        private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
+
+        private void AddRayToCache(Vector3D v1, Vector3D v2)
+        {
+            const int FILTER_LAYER = 18;
+            rays_cache_.Add(new RayTraceHelper.RayInfo() { V1 = v1, V2 = v2, FilterLayer= FILTER_LAYER });
+        }
+        private void GenerateRays(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4)
+        {
+            AddRayToCache(v1, v2);
+            AddRayToCache(v1 + v3, v2 + v3);
+            AddRayToCache(v1 + v4, v2 + v4);
+        }
         private IMyEntity GridStandingOn(IMyCharacter character)
         {
             var GROUND_SEARCH = 2;
             var pos = character.PositionComp.GetPosition();
             var worldRef = character.PositionComp.WorldMatrixRef;
 
+            rays_cache_.Clear();
+            ray_tracer_.Hits.Clear();
+
             var up = pos + worldRef.Up * 0.5;
             var down = up + worldRef.Down * GROUND_SEARCH;
             var forward = worldRef.Forward * 0.2;
             var back = -forward;
+            var right = worldRef.Right * 0.2;
+            var left = worldRef.Left * 0.2;
 
-            var hits1 = new List<IHitInfo>();
-            var hits2 = new List<IHitInfo>();
+            GenerateRays(up, down, forward, back);
+           // GenerateRays(right, left, forward, back);
 
-
-            MyAPIGateway.Physics.CastRay(up, down, hits2, 18);
+            /*MyAPIGateway.Physics.CastRay(up, down, hits2, 18);
             hits1.AddRange(hits2);
             MyAPIGateway.Physics.CastRay(up + forward, down + forward, hits2, 18);
             hits1.AddRange(hits2);
             MyAPIGateway.Physics.CastRay(up + back, down + back, hits2, 18);
-            hits1.AddRange(hits2);
+            hits1.AddRange(hits2);*/
+            var hits = ray_tracer_.CastRays(rays_cache_);
 
-            var validHit = hits1.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
+            var validHit = hits.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
             if (validHit != null)
             {
                 var entity = validHit.HitEntity.GetTopMostParent();
