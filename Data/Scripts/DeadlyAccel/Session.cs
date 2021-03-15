@@ -61,6 +61,7 @@ namespace Natomic.DeadlyAccel
         private readonly Random rand = new Random();
         private readonly List<IMyPlayer> players_ = new List<IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
+        private readonly Dictionary<IMyPlayer, int> iframes_lookup_ = new Dictionary<IMyPlayer, int>();
         private Settings Settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
         private readonly HUDManager hud = new HUDManager();
@@ -283,6 +284,48 @@ namespace Natomic.DeadlyAccel
             AddRayToCache(v1 + v3, v2 + v3);
             AddRayToCache(v1 + v4, v2 + v4);
         }
+        public static bool AnyBlocksInsideSphereFast(MyCubeGrid grid, ref BoundingSphereD sphere, bool checkDestroyed)
+        {
+            var radius = sphere.Radius;
+            radius *= grid.GridSizeR;
+            var center = grid.WorldToGridInteger(sphere.Center);
+            var gridMin = grid.Min;
+            var gridMax = grid.Max;
+            double radiusSq = radius * radius;
+            int radiusCeil = (int)Math.Ceiling(radius);
+            int i, j, k;
+            Vector3I max2 = Vector3I.Min(Vector3I.One * radiusCeil, gridMax - center);
+            Vector3I min2 = Vector3I.Max(Vector3I.One * -radiusCeil, gridMin - center);
+            for (i = min2.X; i <= max2.X; ++i)
+            {
+                for (j = min2.Y; j <= max2.Y; ++j)
+                {
+                    for (k = min2.Z; k <= max2.Z; ++k)
+                    {
+                        if (i * i + j * j + k * k < radiusSq)
+                        {
+                            MyCube cube;
+                            var vector3I = center + new Vector3I(i, j, k);
+
+                            if (grid.TryGetCube(vector3I, out cube))
+                            {
+                                var slim = (IMySlimBlock)cube.CubeBlock;
+                                if (slim.Position == vector3I)
+                                {
+                                    if (checkDestroyed && slim.IsDestroyed)
+                                        continue;
+
+                                    return true;
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        
         private IMyEntity GridStandingOn(IMyCharacter character)
         {
             var GROUND_SEARCH = 2;
@@ -300,14 +343,8 @@ namespace Natomic.DeadlyAccel
             var left = worldRef.Left * 0.2;
 
             GenerateRays(up, down, forward, back);
-           // GenerateRays(right, left, forward, back);
+            //GenerateRays(right, left, forward, back);
 
-            /*MyAPIGateway.Physics.CastRay(up, down, hits2, 18);
-            hits1.AddRange(hits2);
-            MyAPIGateway.Physics.CastRay(up + forward, down + forward, hits2, 18);
-            hits1.AddRange(hits2);
-            MyAPIGateway.Physics.CastRay(up + back, down + back, hits2, 18);
-            hits1.AddRange(hits2);*/
             var hits = ray_tracer_.CastRays(rays_cache_);
 
             var validHit = hits.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
@@ -338,24 +375,36 @@ namespace Natomic.DeadlyAccel
                     var parentBase = player.Character.Parent;
 
 
-
+                    const int IFRAMES = 3;
+                    if (!iframes_lookup_.ContainsKey(player))
+                    {
+                        iframes_lookup_.Add(player, 0);
+                    }
                     if ((parentBase != null || !(AccelNotDueToJetpack(player.Character) && Settings_.IgnoreJetpack)))
                     {
+                        
                         var parent = parentBase as IMyCubeBlock;
                         var accel = CalcCharAccel(player, parent);
                         var gridOn = GridStandingOn(player.Character); // This is expensive!
                         if (gridOn != null)
                         {
                             accel = EntityAccel(gridOn);
+                            iframes_lookup_[player] = IFRAMES;
                         }
-
-
-                        if (ApplyAccelDamage(parent, player, accel))
+                        else if (iframes_lookup_[player] <= 0)
                         {
-                            hud.ShowWarning();
-                            continue;
+                            if (ApplyAccelDamage(parent, player, accel))
+                            {
+                                hud.ShowWarning();
+                                continue;
+                            }
+                        } else if (iframes_lookup_[player] > 0)
+                        {
+                            iframes_lookup_[player]--;
                         }
+                        
                     }
+
                 }
 
                 hud.ClearWarning();
