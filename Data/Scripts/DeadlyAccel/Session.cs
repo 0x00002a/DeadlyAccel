@@ -231,12 +231,12 @@ namespace Natomic.DeadlyAccel
 
 
         }
-               private bool AccelNotDueToJetpack(IMyCharacter character)
+        private bool AccelNotDueToJetpack(IMyCharacter character)
         {
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-               private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
+        private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
         {
             var cushionFactor = 0f;
 
@@ -262,7 +262,7 @@ namespace Natomic.DeadlyAccel
         private void AddRayToCache(Vector3D v1, Vector3D v2)
         {
             const int FILTER_LAYER = 18;
-            rays_cache_.Add(new RayTraceHelper.RayInfo() { V1 = v1, V2 = v2, FilterLayer= FILTER_LAYER });
+            rays_cache_.Add(new RayTraceHelper.RayInfo() { V1 = v1, V2 = v2, FilterLayer = FILTER_LAYER });
         }
         private void GenerateRays(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4)
         {
@@ -270,8 +270,8 @@ namespace Natomic.DeadlyAccel
             AddRayToCache(v1 + v3, v2 + v3);
             AddRayToCache(v1 + v4, v2 + v4);
         }
-        
-        
+
+
         private IMyEntity GridStandingOn(IMyCharacter character)
         {
             var GROUND_SEARCH = 2;
@@ -285,11 +285,8 @@ namespace Natomic.DeadlyAccel
             var down = up + worldRef.Down * GROUND_SEARCH;
             var forward = worldRef.Forward * 0.2;
             var back = -forward;
-            var right = worldRef.Right * 0.2;
-            var left = worldRef.Left * 0.2;
 
             GenerateRays(up, down, forward, back);
-            //GenerateRays(right, left, forward, back);
 
             var hits = ray_tracer_.CastRays(rays_cache_);
 
@@ -297,12 +294,12 @@ namespace Natomic.DeadlyAccel
             if (validHit != null)
             {
                 var entity = validHit.HitEntity.GetTopMostParent();
-                
+
                 if (Vector3D.DistanceSquared(validHit.Position, up) < (double)GROUND_SEARCH * GROUND_SEARCH)
                 {
                     return entity;
                 }
-                
+
             }
             return null;
         }
@@ -328,7 +325,7 @@ namespace Natomic.DeadlyAccel
                     }
                     if ((parentBase != null || !(AccelNotDueToJetpack(player.Character) && Settings_.IgnoreJetpack)))
                     {
-                        
+
                         var parent = parentBase as IMyCubeBlock;
                         var accel = CalcCharAccel(player, parent);
                         var gridOn = GridStandingOn(player.Character); // This is expensive!
@@ -337,18 +334,19 @@ namespace Natomic.DeadlyAccel
                             accel = EntityAccel(gridOn);
                             iframes_lookup_[player] = IFRAMES;
                         }
-                        else if (iframes_lookup_[player] <= 0)
+                        if (iframes_lookup_[player] <= 0 || gridOn != null)
                         {
                             if (ApplyAccelDamage(parent, player, accel))
                             {
                                 hud.ShowWarning();
                                 continue;
                             }
-                        } else if (iframes_lookup_[player] > 0)
+                        }
+                        else if (iframes_lookup_[player] > 0)
                         {
                             iframes_lookup_[player]--;
                         }
-                        
+
                     }
 
                 }
@@ -362,11 +360,12 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
 
             ++tick;
-            try 
-                // example try-catch for catching errors and notifying player, use only for non-critical code!
+            try
+            // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (MyAPIGateway.Multiplayer.IsServer) {
+                if (MyAPIGateway.Multiplayer.IsServer)
+                {
                     if (tick % TICKS_PER_CACHE_UPDATE == 0)
                     {
                         UpdatePlayersCache();
