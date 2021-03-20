@@ -19,28 +19,33 @@ namespace Natomic.DeadlyAccel
 {
     struct JuiceItem: IComparable<JuiceItem>
     {
-        public float Effect;
+        public API.JuiceDefinition JuiceDef;
         public IMyGasTank Tank;
 
         public int CompareTo(JuiceItem other)
         {
-            return Effect.CompareTo(other.Effect);
+            return JuiceDef.SafePointIncrease.CompareTo(other.JuiceDef.SafePointIncrease);
         }
     }
     class JuiceTracker
     {
-        private readonly Dictionary<string, float> items_ = new Dictionary<string, float>(); // Lookup table for subtypeid against juice level
+        private readonly Dictionary<string, API.JuiceDefinition> items_ = new Dictionary<string, API.JuiceDefinition>(); // Lookup table for subtypeid against juice level
         private readonly List<MyInventoryItem> inventory_cache_ = new List<MyInventoryItem>();
         private readonly Dictionary<MyCubeGrid, List<IMyGasTank>> tanks_ = new Dictionary<MyCubeGrid, List<IMyGasTank>>();
         private readonly List<IMySlimBlock> blocks_cache_ = new List<IMySlimBlock>();
 
-        public void InitLookupTbl(List<Settings.JuiceValue> values)
+       /* public void InitLookupTbl(List<Settings.JuiceValue> values)
         {
             foreach(var val in values)
             {
                 items_.Add(val.SubtypeId, val.SafePointIncrease);
             }
 
+        }*/
+
+        public void AddJuiceDefinition(API.JuiceDefinition def)
+        {
+            items_.Add(def.SubypeId, def);
         }
         public void UpdateTanksCache(MyCubeGrid grid)
         {
@@ -105,7 +110,7 @@ namespace Natomic.DeadlyAccel
                 .Where(t => t.FilledRatio > 0 && inv.IsConnectedTo(t.GetInventory()))
                 .Select(t => {
                     var tankDef = (MyGasTankDefinition)t.SlimBlock.BlockDefinition;
-                    return (JuiceItem?)(new JuiceItem() { Tank = t, Effect = items_[tankDef.StoredGasId.SubtypeName] });
+                    return (JuiceItem?)(new JuiceItem() { Tank = t, JuiceDef = items_[tankDef.StoredGasId.SubtypeName]});
                     })
                 .Max();
 

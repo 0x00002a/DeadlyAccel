@@ -55,6 +55,7 @@ namespace Natomic.DeadlyAccel
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
         private const ushort ComChannelId = 15128;
+        private const long MOD_API_MSG_ID = 2422178213;
         private const string ModName = "Deadly Acceleration";
 
         private int tick = 0;
@@ -71,6 +72,16 @@ namespace Natomic.DeadlyAccel
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
         private JuiceTracker juice_manager_;
 
+        private void RegisterJuice(API.JuiceDefinition def)
+        {
+            try
+            {
+                juice_manager_.AddJuiceDefinition(def);
+            } catch(Exception e)
+            {
+                Log.Error($"Failed to add juice definition {def}: {e.Message}\n-- Stack Trace --\n{e.StackTrace}", "Failed to add a juice definition");
+            }
+        }
 
         public override void LoadData()
         {
@@ -99,12 +110,13 @@ namespace Natomic.DeadlyAccel
                 ServerSideInit();
             }
 
+            MyAPIGateway.Utilities.SendModMessage(MOD_API_MSG_ID, )
+
             BuildCushioningCache(Settings_);
         }
         private void ServerSideInit()
         {
             juice_manager_ = new JuiceTracker();
-            juice_manager_.InitLookupTbl(Settings_.JuiceConfig);
         }
         private Settings LoadSettings()
         {
@@ -146,29 +158,6 @@ namespace Natomic.DeadlyAccel
                 IgnoreJetpack = true,
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 1.1f,
-                JuiceConfig = new List<Settings.JuiceValue>()
-                {
-                 /*   new Settings.JuiceValue()
-                    {
-                        SubtypeId = "NI_JuiceLvl_1",
-                        SafePointIncrease = 9.81f * 2, // 2g's
-                    },
-                    new Settings.JuiceValue()
-                    {
-                        SubtypeId = "NI_JuiceLvl_2",
-                        SafePointIncrease = 9.81f * 3, // 3g's
-                    },
-                    new Settings.JuiceValue()
-                    {
-                        SubtypeId = "NI_JuiceLvl_3",
-                        SafePointIncrease = 9.81f * 4, // 4g's
-                    }*/
-                    new Settings.JuiceValue()
-                    {
-                        SubtypeId = "Hydrogen",
-                        SafePointIncrease = 9.81f * 9999, // Just for testing lol
-                    }
-                },
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)

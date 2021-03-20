@@ -59,10 +59,6 @@ namespace Natomic.DeadlyAccel
 
         [ProtoMember(4)]
         public float DamageScaleBase;
-
-        [ProtoMember(5)]
-        public List<JuiceValue> JuiceConfig;
-
         public override string ToString()
         {
             return MyAPIGateway.Utilities.SerializeToXML(this);
