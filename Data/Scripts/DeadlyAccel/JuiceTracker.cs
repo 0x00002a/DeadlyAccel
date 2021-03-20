@@ -45,7 +45,7 @@ namespace Natomic.DeadlyAccel
 
         public void AddJuiceDefinition(API.JuiceDefinition def)
         {
-            items_.Add(def.SubypeId, def);
+            items_.Add(def.SubtypeId, def);
         }
         public void UpdateTanksCache(MyCubeGrid grid)
         {

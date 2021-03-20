@@ -75,12 +75,15 @@ namespace Natomic.DeadlyAccel
         {
             try
             {
-                var def = obj as API.JuiceDefinition?;
-                if (def == null)
+                var msg = obj as byte[];
+                if (msg == null)
                 {
+                    Log.Error("Failed to register juice definition, object was not sent as bytes");
                     return false;
                 }
-                juice_manager_.AddJuiceDefinition((API.JuiceDefinition)def);
+                var def = MyAPIGateway.Utilities.SerializeFromBinary<API.JuiceDefinition>(msg);
+                juice_manager_.AddJuiceDefinition(def);
+                Log.Info($"Added juice definition: {def}");
                 return true;
             } catch(Exception e)
             {
@@ -302,7 +305,7 @@ namespace Natomic.DeadlyAccel
                     if (Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
                     {
                         // Juice stopped damage
-                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ConsumeRate);
+                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
                         return false;
                     }
                 }
