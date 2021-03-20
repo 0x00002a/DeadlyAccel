@@ -55,7 +55,6 @@ namespace Natomic.DeadlyAccel
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
         private const ushort ComChannelId = 15128;
-        private const long MOD_API_MSG_ID = 2422178213;
         private const string ModName = "Deadly Acceleration";
 
         private int tick = 0;
@@ -72,14 +71,21 @@ namespace Natomic.DeadlyAccel
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
         private JuiceTracker juice_manager_;
 
-        private void RegisterJuice(API.JuiceDefinition def)
+        private bool RegisterJuice(object obj)
         {
             try
             {
-                juice_manager_.AddJuiceDefinition(def);
+                var def = obj as API.JuiceDefinition?;
+                if (def == null)
+                {
+                    return false;
+                }
+                juice_manager_.AddJuiceDefinition((API.JuiceDefinition)def);
+                return true;
             } catch(Exception e)
             {
-                Log.Error($"Failed to add juice definition {def}: {e.Message}\n-- Stack Trace --\n{e.StackTrace}", "Failed to add a juice definition");
+                Log.Error($"Failed to add juice definition: {e.Message}\n-- Stack Trace --\n{e.StackTrace}", "Failed to add a juice definition");
+                return false;
             }
         }
 
@@ -110,7 +116,12 @@ namespace Natomic.DeadlyAccel
                 ServerSideInit();
             }
 
-            MyAPIGateway.Utilities.SendModMessage(MOD_API_MSG_ID, )
+            var apiHooks = new Dictionary<string, Func<object, bool>>()
+            {
+                {"RegisterJuice", RegisterJuice}
+            };
+
+            MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
 
             BuildCushioningCache(Settings_);
         }
@@ -265,7 +276,7 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-        
+
         private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
         {
             var cushionFactor = 0f;
@@ -274,7 +285,7 @@ namespace Natomic.DeadlyAccel
             if (parentGrid != null)
             {
                 juice_manager_.UpdateTanksCache(parentGrid);
-            } 
+            }
 
             if (parent != null)
             {
@@ -288,14 +299,14 @@ namespace Natomic.DeadlyAccel
                 if (juice_max != null)
                 {
                     var juice = (JuiceItem)juice_max;
-                    Log.Info($"Reduced damage by level {juice_max?.Effect}");
-                    if (Settings_.SafeMaximum + juice.Effect >= accel)
+                    if (Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
                     {
                         // Juice stopped damage
-                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(10000000);
+                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ConsumeRate);
+                        return false;
                     }
                 }
-                    var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
+                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
                 //dmg *= 10; // Scale it up since only run every 10 ticks
                 dmg *= (1 - cushionFactor);
                 player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
