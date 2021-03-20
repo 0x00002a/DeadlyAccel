@@ -36,6 +36,8 @@ using VRage.Input;
 using VRageMath;
 using System.Linq;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.Collections;
+using Sandbox.Game.EntityComponents;
 
 namespace Natomic.DeadlyAccel
 {
@@ -67,6 +69,7 @@ namespace Natomic.DeadlyAccel
         private readonly HUDManager hud = new HUDManager();
 
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
+        private JuiceTracker juice_manager_;
 
 
         public override void LoadData()
@@ -91,7 +94,17 @@ namespace Natomic.DeadlyAccel
 
             net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
 
+            if (MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer)
+            {
+                ServerSideInit();
+            }
+
             BuildCushioningCache(Settings_);
+        }
+        private void ServerSideInit()
+        {
+            juice_manager_ = new JuiceTracker();
+            juice_manager_.InitLookupTbl(Settings_.JuiceConfig);
         }
         private Settings LoadSettings()
         {
@@ -133,6 +146,29 @@ namespace Natomic.DeadlyAccel
                 IgnoreJetpack = true,
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 1.1f,
+                JuiceConfig = new List<Settings.JuiceValue>()
+                {
+                 /*   new Settings.JuiceValue()
+                    {
+                        SubtypeId = "NI_JuiceLvl_1",
+                        SafePointIncrease = 9.81f * 2, // 2g's
+                    },
+                    new Settings.JuiceValue()
+                    {
+                        SubtypeId = "NI_JuiceLvl_2",
+                        SafePointIncrease = 9.81f * 3, // 3g's
+                    },
+                    new Settings.JuiceValue()
+                    {
+                        SubtypeId = "NI_JuiceLvl_3",
+                        SafePointIncrease = 9.81f * 4, // 4g's
+                    }*/
+                    new Settings.JuiceValue()
+                    {
+                        SubtypeId = "Hydrogen",
+                        SafePointIncrease = 9.81f * 9999, // Just for testing lol
+                    }
+                },
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
@@ -195,6 +231,10 @@ namespace Natomic.DeadlyAccel
             players_.RemoveAll(p => p.IsBot);
 
         }
+        private bool PlayerHasJuice(IMyCharacter character)
+        {
+            return character.GetInventory().ContainItems(1, VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("NI_JuiceLvl_1"));
+        }
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
             var physics = player.Character.Physics;
@@ -236,9 +276,16 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
+        
         private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
         {
             var cushionFactor = 0f;
+
+            var parentGrid = parent == null ? null : (MyCubeGrid)parent?.CubeGrid;
+            if (parentGrid != null)
+            {
+                juice_manager_.UpdateTanksCache(parentGrid);
+            } 
 
             if (parent != null)
             {
@@ -247,7 +294,19 @@ namespace Natomic.DeadlyAccel
 
             if (accel > Settings_.SafeMaximum)
             {
-                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
+
+                var juice_max = parentGrid != null ? juice_manager_.MaxLevelJuiceInInv(parent.GetInventory(), parentGrid) : null;
+                if (juice_max != null)
+                {
+                    var juice = (JuiceItem)juice_max;
+                    Log.Info($"Reduced damage by level {juice_max?.Effect}");
+                    if (Settings_.SafeMaximum + juice.Effect >= accel)
+                    {
+                        // Juice stopped damage
+                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(10000000);
+                    }
+                }
+                    var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
                 //dmg *= 10; // Scale it up since only run every 10 ticks
                 dmg *= (1 - cushionFactor);
                 player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
@@ -311,12 +370,8 @@ namespace Natomic.DeadlyAccel
 
                 if (!player.Character.IsDead)
                 {
-                    if (tick % 60 == 0)
-                    {
-
-                    }
+                    
                     var parentBase = player.Character.Parent;
-
 
                     const int IFRAMES = 3;
                     if (!iframes_lookup_.ContainsKey(player))
