@@ -4,3 +4,4 @@
 
 /.vs/DeadlyAccel
 /obj
+/bin/x64/Debug/netstandard2.0

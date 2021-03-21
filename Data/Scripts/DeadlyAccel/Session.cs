@@ -38,6 +38,7 @@ using System.Linq;
 using VRage.Game.ModAPI.Interfaces;
 using VRage.Collections;
 using Sandbox.Game.EntityComponents;
+using VRage;
 
 namespace Natomic.DeadlyAccel
 {
@@ -287,7 +288,6 @@ namespace Natomic.DeadlyAccel
             var parentGrid = parent == null ? null : (MyCubeGrid)parent?.CubeGrid;
             if (parentGrid != null)
             {
-                juice_manager_.UpdateTanksCache(parentGrid);
             }
 
             if (parent != null)
@@ -298,14 +298,17 @@ namespace Natomic.DeadlyAccel
             if (accel > Settings_.SafeMaximum)
             {
 
-                var juice_max = parentGrid != null ? juice_manager_.MaxLevelJuiceInInv(parent.GetInventory(), parentGrid) : null;
+                var inv = parent?.GetInventory();
+                var juice_max = parentGrid != null ? juice_manager_.MaxLevelJuiceInInv(inv) : null;
                 if (juice_max != null)
                 {
                     var juice = (JuiceItem)juice_max;
-                    if (Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
+                    var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
+                    if (juice_left && Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
                     {
                         // Juice stopped damage
-                        juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
+                        //juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
+                        juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
                         return false;
                     }
                 }
