@@ -42,7 +42,7 @@ namespace Natomic.DeadlyAccel
        public JuiceItem? MaxLevelJuiceInInv(IMyInventory inv)
         {
             inventory_cache_.Clear();
-            var items = inv.GetItems();
+            var items = ((MyInventory)inv).GetItems(); // If this cast is not safe then then universe has imploded
 
             return items
                 .Where(i => i.Content.TypeId.ToString() == "MyObjectBuilder_OxygenContainerDefinition" && items_.ContainsKey(i.Content.SubtypeId.ToString()))
