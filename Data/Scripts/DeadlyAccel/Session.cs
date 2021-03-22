@@ -303,12 +303,13 @@ namespace Natomic.DeadlyAccel
                 if (juice_max != null)
                 {
                     var juice = (JuiceItem)juice_max;
-                    var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
-                    if (juice_left && Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
+                   // var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
+                    if (Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
                     {
                         // Juice stopped damage
                         //juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
-                        juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
+                        //juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
+                        juice.Canister.GasLevel -= juice.JuiceDef.ComsumptionRate;
                         return false;
                     }
                 }

@@ -21,7 +21,7 @@ namespace Natomic.DeadlyAccel
     struct JuiceItem: IComparable<JuiceItem>
     {
         public API.JuiceDefinition JuiceDef;
-        public MyObjectBuilder_GasContainerObject? Canister;
+        public MyObjectBuilder_GasContainerObject Canister;
 
         public int CompareTo(JuiceItem other)
         {
@@ -44,7 +44,7 @@ namespace Natomic.DeadlyAccel
             inventory_cache_.Clear();
             var items = inv.GetItems();
 
-            return items 
+            return items
                 .Where(i => i.Content.TypeId.ToString() == "MyObjectBuilder_OxygenContainerDefinition" && items_.ContainsKey(i.Content.SubtypeId.ToString()))
                 .Select(i => new JuiceItem { JuiceDef = items_[i.Content.SubtypeId.ToString()], Canister = i.Content as MyObjectBuilder_GasContainerObject })
                 .Where(item => item.Canister.GasLevel >= item.JuiceDef.ComsumptionRate)
