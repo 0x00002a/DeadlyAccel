@@ -53,7 +53,7 @@ namespace Natomic.DeadlyAccel
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
 
         private const ushort ComChannelId = 15128;
-        private const string ModName = "Deadly Acceleration";
+        public const string ModName = "Deadly Acceleration";
 
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
@@ -67,6 +67,7 @@ namespace Natomic.DeadlyAccel
         private readonly HUDManager hud = new HUDManager();
 
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
+        private readonly ChatHandler cmd_handler_ = new ChatHandler(Settings_);
 
 
         public override void LoadData()
@@ -86,7 +87,8 @@ namespace Natomic.DeadlyAccel
 
             if (!Net.NetworkAPI.IsInitialized)
             {
-                Net.NetworkAPI.Init(ComChannelId, ModName);
+                Net.NetworkAPI.Init(ComChannelId, ModName, "/da");
+                var net_api = Net.NetworkAPI.Instance;
             }
 
             net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
@@ -134,7 +136,7 @@ namespace Natomic.DeadlyAccel
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 1.1f,
                 VersionNumber = Settings.CurrentVersionNumber,
-                IgnoredGridNames = new string[0],
+                IgnoredGridNames = new List<string>(),
                 IgnoreRespawnShips = true, // Vanilla respawn ships are death traps due to parachutes
             };
 

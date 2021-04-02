@@ -54,7 +54,7 @@ namespace Natomic.DeadlyAccel
         public float DamageScaleBase;
 
         [ProtoMember(5)]
-        public string[] IgnoredGridNames; // List of grids to ignore damage from 
+        public List<string> IgnoredGridNames; // List of grids to ignore damage from 
 
         [ProtoMember(6)]
         public bool IgnoreRespawnShips; // Whether to ignore grids where IsRespawn == true
