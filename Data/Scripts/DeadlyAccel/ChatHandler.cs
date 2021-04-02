@@ -117,11 +117,12 @@ Then to save it on disk (done automatically on world save, but a reload without 
         private void OnConfigSaveServer(ulong steamId, string cmd, byte[] data, DateTime timestamp)
         {
             settings_.Save();
+            LogConfigValue("Saved config");
         }
         private void OnConfigReloadServer(ulong steamId, string cmd, byte[] data, DateTime timestamp)
         {
-            Log.Info("Reloading config", "Reloading config");
             net_settings_.SetValue(Settings.TryLoad(settings_));
+            LogConfigValue("Reloaded config");
         }
         private void PrintConfigValue<T>(T value)
         {
@@ -143,11 +144,22 @@ Then to save it on disk (done automatically on world save, but a reload without 
             {
                 field = (T)Convert.ChangeType(value, typeof(T));
                 var msg = $"Successfully set {fieldName} to {value}";
-                Log.Info(msg, msg);
+                LogConfigValue(msg);
             } else
             {
                 PrintConfigValue(field);
             }
+        }
+        private void LogConfigValue(string msg, bool error = false)
+        {
+            if (!error)
+            {
+                Log.Info(msg);
+            } else
+            {
+                Log.Error(msg);
+            }
+            MyAPIGateway.Utilities.ShowMessage(DeadlyAccelSession.ModName, msg);
         }
         private void SplitArgs(string argsStr, List<string> readin)
         {
@@ -212,7 +224,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
             }
             if (logMsg.Length > 0)
             {
-                Log.Info(logMsg, logMsg);
+                LogConfigValue(logMsg);
             }
         }
         private void SyncConfig()
@@ -249,7 +261,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
                     break;
                 default:
                     var msg = $"Unkown command: '{argsStr}'";
-                    Log.Error(msg, msg);
+                    LogConfigValue(msg, true);
                     successful = false;
                     break;
             }
