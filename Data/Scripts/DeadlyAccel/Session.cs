@@ -135,6 +135,7 @@ namespace Natomic.DeadlyAccel
                 DamageScaleBase = 1.1f,
                 VersionNumber = Settings.CurrentVersionNumber,
                 IgnoredGridNames = new string[0],
+                IgnoreRespawnShips = true, // Vanilla respawn ships are death traps due to parachutes
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
@@ -314,6 +315,25 @@ namespace Natomic.DeadlyAccel
             }
             return null;
         }
+        private bool GridIgnored(IMyCubeGrid grid)
+        {
+            if (grid == null)
+            {
+                return false;
+            }
+            else if (Settings_.IgnoreRespawnShips && grid.IsRespawnGrid)
+            {
+                return true;
+            }
+            else if (Settings_.IgnoredGridNames.Contains(grid.CustomName))
+            {
+                // TODO: Debug log this 
+                return true;
+            } else
+            {
+                return false;
+            }
+        }
 
         private void PlayersUpdate()
         {
@@ -335,13 +355,11 @@ namespace Natomic.DeadlyAccel
                     {
 
                         var parent = parentBase as IMyCubeBlock;
-                        if (parent?.CubeGrid != null && Settings_.IgnoredGridNames.Contains(parent.CubeGrid.CustomName))
+                        if (GridIgnored(parent?.CubeGrid))
                         {
-                            // TODO: Debug log this 
                             continue;
                         }
-                        Log.Info($"Grid name: {parent.CubeGrid.CustomName}");
-                        Log.Info($"GRIDS: {Settings_.IgnoredGridNames.Length}");
+                        
                         var accel = CalcCharAccel(player, parent);
                         var gridOn = GridStandingOn(player.Character); // This is expensive!
                         if (gridOn != null)

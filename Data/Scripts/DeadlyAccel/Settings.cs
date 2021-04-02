@@ -56,11 +56,11 @@ namespace Natomic.DeadlyAccel
         [ProtoMember(5)]
         public string[] IgnoredGridNames; // List of grids to ignore damage from 
 
-        //[ProtoMember(6)]
-        //public bool IgnoreRespawnShips; // Whether to ignore ships marked IsRespawn
+        [ProtoMember(6)]
+        public bool IgnoreRespawnShips; // Whether to ignore grids where IsRespawn == true
 
         [ProtoIgnore]
-        public static int CurrentVersionNumber = 1; 
+        public static int CurrentVersionNumber = 2; 
         public int VersionNumber = CurrentVersionNumber - 1; // Increases on breaking changes. Defaults to last version number
 
         public override string ToString()
