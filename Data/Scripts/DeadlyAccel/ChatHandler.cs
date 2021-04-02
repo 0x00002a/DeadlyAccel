@@ -22,19 +22,22 @@ help: Prints this help text. Use help <command> to view detailed help on a comma
 config: Allows viewing and modifying configuration values
 ";
         private const string CONF_HELP_TXT = @"
-Usage: /da config <edit|reload> <property name> [set|add|remove] <value>|<values>
+Usage: /da config <reload>|[<set|add|remove> <property name> <value>]
 
-reload: Reloads the config or syncs it with the server
+reload: Reloads the config 
 
-edit: 
-Edits config values
+set: 
+Sets config values
 
 <property name>: Name of the value to edit (matches XML tag in the config file) 
 <value>: Single value to set the property to (only works for one-valued properties)
-<values>: List of values (only works for multi-valued properties). Values with spaces between MUST be quoted with single quotes ('')
+
+add: Adds a config value (for list properties)
+
+remove: Removes a config value (for list properties)
 
 Example (adds Respawn Planet Pod to list of ignored grids and updates the config):
-/da config edit IgnoredGridNames add 'Respawn Planet Pod'
+/da config add IgnoredGridNames 'Respawn Planet Pod'
 /da config reload
 
 ";
@@ -99,11 +102,13 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
         {
             MyAPIGateway.Utilities.ShowMissionScreen(DeadlyAccelSession.ModName, null, null, value.ToString());
         }
-        private void ConfigValueCmd<T>(string cmd, ref T field, string value)
+        private void ConfigValueCmd<T>(string cmd, ref T field, string value, string fieldName)
         {
             if (cmd == "set")
             {
                 field = (T)Convert.ChangeType(value, typeof(T));
+                var msg = $"Successfully set {fieldName} to {value}";
+                Log.Info(msg, msg);
             } else
             {
                 PrintConfigValue(field);
@@ -143,19 +148,33 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             }
 
         }
-        private void ConfigListCmd<T>(string cmd, ICollection<T> field, string value) 
+        private void ConfigListCmd<T>(string cmd, ICollection<T> field, string value, string fieldName) 
         {
+            string logMsg = "";
             switch(cmd)
             {
                 case "add":
                     field.Add((T)Convert.ChangeType(value, typeof(T)));
+                    logMsg = $"Sucessfully added {value} to {fieldName}";
                     break;
                 case "remove":
-                    field.Remove((T)Convert.ChangeType(value, typeof(T)));
+                    var val = (T)Convert.ChangeType(value, typeof(T));
+                    if (field.Contains(val))
+                    {
+                        field.Remove(val);
+                        logMsg = $"Successfully removed {value} from {fieldName}";
+                    } else
+                    {
+                        logMsg = $"Failed to remove {value} from {fieldName}: {value} does not exist in {fieldName}";
+                    }
                     break;
                 default:
                     PrintConfigValue(field);
                     break;
+            }
+            if (logMsg.Length > 0)
+            {
+                Log.Info(logMsg, logMsg);
             }
         }
         private void SyncConfig()
@@ -175,20 +194,20 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             switch(args[1])
             {
                 case "IgnoreJetpack":
-                    ConfigValueCmd(cmd, ref settings_.IgnoreJetpack, value);
+                    ConfigValueCmd(cmd, ref settings_.IgnoreJetpack, value, "IgnoreJetpack");
                     break;
                 case "SafeMaximum":
-                    ConfigValueCmd(cmd, ref settings_.SafeMaximum, value);
+                    ConfigValueCmd(cmd, ref settings_.SafeMaximum, value, "SafeMaximum");
                     break;
 
                 case "DamageScaleBase":
-                    ConfigValueCmd(cmd, ref settings_.DamageScaleBase, value);
+                    ConfigValueCmd(cmd, ref settings_.DamageScaleBase, value, "DamageScaleBase");
                     break;
                 case "IgnoreRespawnShips":
-                    ConfigValueCmd(cmd, ref settings_.IgnoreRespawnShips, value);
+                    ConfigValueCmd(cmd, ref settings_.IgnoreRespawnShips, value, "IgnoreRespawnShips");
                     break;
                 case "IgnoredGridNames":
-                    ConfigListCmd(cmd, settings_.IgnoredGridNames, value);
+                    ConfigListCmd(cmd, settings_.IgnoredGridNames, value, "IgnoredGridNames");
                     break;
                 default:
                     var msg = $"Unkown command: '{argsStr}'";
