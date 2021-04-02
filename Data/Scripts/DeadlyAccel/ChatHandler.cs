@@ -53,22 +53,33 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             net.RegisterChatCommand("help", OnHelp);
             net.RegisterChatCommand("config", (argsStr) =>
             {
-                Log.Info($"Got cmd: {argsStr}");
-                var first = argsStr.IndexOf(' ');
-                var arg = argsStr.Substring(0, first + 1);
-                switch (arg)
+                try
                 {
-                    case "view":
-                    case "edit":
-                        OnConfigEdit(argsStr);
-                        break;
-                    case "reload":
-                        net.SendCommand(RELOAD_CONF_CMD);
-                        break;
-                    default:
-                        var msg = $"Unknown command: '{argsStr}'";
-                        Log.Error(msg, msg);
-                        break;
+                    Log.Info($"Got cmd: {argsStr}");
+                    var first = argsStr.IndexOf(' ');
+                    if (first == -1)
+                    {
+                        first = argsStr.Length;
+                    }
+                    var arg = argsStr.Substring(0, first);
+                    Log.Info($"Arg: '{arg}'");
+                    switch (arg)
+                    {
+                        case "view":
+                        case "set":
+                            OnConfigEdit(argsStr);
+                            break;
+                        case "reload":
+                            net.SendCommand(RELOAD_CONF_CMD);
+                            break;
+                        default:
+                            var msg = $"Unknown command: '{argsStr}'";
+                            Log.Error(msg, msg);
+                            break;
+                    }
+                } catch(Exception e)
+                {
+                    Log.Error(e, $"Failed to parse command: {e.Message}. This is a bug, please report it along with the contents of your log file");
                 }
 
             });
@@ -103,7 +114,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             const char space = ' ';
 
             var lowerRange = 0;
-            var upperRange = 0;
+            var len = 0;
             bool openQuotes = false;
             foreach(var ch in argsStr)
             {
@@ -113,17 +124,22 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                 }
                 else if (ch == space && !openQuotes)
                 {
-                    if (lowerRange == upperRange)
+                    if (len == 0)
                     {
                         readin.Add(string.Empty);
                     }
-                    else
+                    else if (len < argsStr.Length)
                     {
-                        readin.Add(argsStr.Substring(lowerRange, upperRange));
+                        readin.Add(argsStr.Substring(lowerRange, len));
                     }
-                    lowerRange = upperRange;
+                    lowerRange += len + 1;
+                    len = -1;
                 }
-                ++upperRange;
+                ++len;
+            }
+            if (lowerRange != len && lowerRange != argsStr.Length)
+            {
+                readin.Add(argsStr.Substring(lowerRange));
             }
 
         }
@@ -154,7 +170,8 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             var successful = true;
 
             var cmd = args[0];
-            var value = args.Count >= 2 ? args[2] : null;
+            var value = args.Count >= 3 ? args[2] : null;
+            Log.Info($"Config arg: '{args[1]}'");
             switch(args[1])
             {
                 case "IgnoreJetpack":
