@@ -135,22 +135,26 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             bool openQuotes = false;
             foreach(var ch in argsStr)
             {
+                var append = false;
                 if (ch == '\'')
                 {
+                    // End of quoted section 
                     openQuotes = !openQuotes;
+                    append = true;
                 }
                 else if (ch == space && !openQuotes)
                 {
-                    if (len == 0)
-                    {
-                        readin.Add(string.Empty);
-                    }
-                    else if (len < argsStr.Length)
+                    append = true;
+                }
+                if (append)
+                {
+                    if (len != 0 && len < argsStr.Length)
                     {
                         readin.Add(argsStr.Substring(lowerRange, len));
                     }
                     lowerRange += len + 1;
                     len = -1;
+
                 }
                 ++len;
             }
