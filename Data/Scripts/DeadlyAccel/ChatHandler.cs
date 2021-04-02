@@ -58,6 +58,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                 var arg = argsStr.Substring(0, first + 1);
                 switch (arg)
                 {
+                    case "view":
                     case "edit":
                         OnConfigEdit(argsStr);
                         break;
@@ -87,11 +88,11 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
         {
             MyAPIGateway.Utilities.ShowMissionScreen(DeadlyAccelSession.ModName, null, null, value.ToString());
         }
-        private void ConfigValueCmd<T>(List<string> cmds, ref T field)
+        private void ConfigValueCmd<T>(string cmd, ref T field, string value)
         {
-            if (cmds[1] == "set")
+            if (cmd == "set")
             {
-                field = (T)Convert.ChangeType(cmds[2], typeof(T));
+                field = (T)Convert.ChangeType(value, typeof(T));
             } else
             {
                 PrintConfigValue(field);
@@ -126,21 +127,15 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             }
 
         }
-        private void ConfigListCmd<T, V>(List<string> cmds, T field) where T: ICollection<V>
+        private void ConfigListCmd<T>(string cmd, ICollection<T> field, string value) 
         {
-            switch(cmds[1])
+            switch(cmd)
             {
                 case "add":
-                    for (var n = 2; n != cmds.Count; ++n)
-                    {
-                        field.Add((V)Convert.ChangeType(cmds[n], typeof(V)));
-                    }
+                    field.Add((T)Convert.ChangeType(value, typeof(T)));
                     break;
                 case "remove":
-                    for (var n = 2; n != cmds.Count; ++n)
-                    {
-                        field.Remove((V)Convert.ChangeType(cmds[n], typeof(V)));
-                    }
+                    field.Remove((T)Convert.ChangeType(value, typeof(T)));
                     break;
                 default:
                     PrintConfigValue(field);
@@ -157,23 +152,26 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             SplitArgs(argsStr, args_cache_);
             var args = args_cache_;
             var successful = true;
-            switch(args[0])
+
+            var cmd = args[0];
+            var value = args.Count >= 2 ? args[2] : null;
+            switch(args[1])
             {
                 case "IgnoreJetpack":
-                    ConfigValueCmd(args, ref settings_.IgnoreJetpack);
+                    ConfigValueCmd(cmd, ref settings_.IgnoreJetpack, value);
                     break;
                 case "SafeMaximum":
-                    ConfigValueCmd(args, ref settings_.SafeMaximum);
+                    ConfigValueCmd(cmd, ref settings_.SafeMaximum, value);
                     break;
 
                 case "DamageScaleBase":
-                    ConfigValueCmd(args, ref settings_.DamageScaleBase);
+                    ConfigValueCmd(cmd, ref settings_.DamageScaleBase, value);
                     break;
                 case "IgnoreRespawnShips":
-                    ConfigValueCmd(args, ref settings_.IgnoreRespawnShips);
+                    ConfigValueCmd(cmd, ref settings_.IgnoreRespawnShips, value);
                     break;
                 case "IgnoredGridNames":
-                    ConfigListCmd<List<string>, string>(args, settings_.IgnoredGridNames);
+                    ConfigListCmd(cmd, settings_.IgnoredGridNames, value);
                     break;
                 default:
                     var msg = $"Unkown command: '{argsStr}'";
