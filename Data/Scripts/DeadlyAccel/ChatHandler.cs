@@ -68,6 +68,8 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                     Log.Info($"Arg: '{arg}'");
                     switch (arg)
                     {
+                        case "add":
+                        case "remove":
                         case "view":
                         case "set":
                             OnConfigEdit(argsStr);
@@ -101,6 +103,16 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
         private void PrintConfigValue<T>(T value)
         {
             MyAPIGateway.Utilities.ShowMissionScreen(DeadlyAccelSession.ModName, null, null, value.ToString());
+        }
+        private void PrintConfigValueList<T>(ICollection<T> values)
+        {
+            string res = "";
+            foreach(var val in values)
+            {
+                res += val.ToString() + "\n";
+            }
+            PrintConfigValue(res);
+
         }
         private void ConfigValueCmd<T>(string cmd, ref T field, string value, string fieldName)
         {
@@ -169,7 +181,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                     }
                     break;
                 default:
-                    PrintConfigValue(field);
+                    PrintConfigValueList(field);
                     break;
             }
             if (logMsg.Length > 0)
