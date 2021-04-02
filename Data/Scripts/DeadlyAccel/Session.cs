@@ -133,6 +133,8 @@ namespace Natomic.DeadlyAccel
                 IgnoreJetpack = true,
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 1.1f,
+                VersionNumber = Settings.CurrentVersionNumber,
+                IgnoredGridNames = new HashSet<string>(),
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
@@ -142,8 +144,18 @@ namespace Natomic.DeadlyAccel
             else
             {
                 var settings = Settings.TryLoad(DefaultSettings);
-                settings.Save();
-                return settings;
+                if (!settings.ValidAgainst(DefaultSettings))
+                {
+                    settings.FullBackup();
+                    Log.Info("Old config detected, performing backup and overwriting", "Old config file detected. Your current config file has been backed up but you will need to transfer any changes to the new config file");
+                    DefaultSettings.Save();
+                    return DefaultSettings;
+                }
+                else
+                {
+                    settings.Save();
+                    return settings;
+                }
             }
 
         }

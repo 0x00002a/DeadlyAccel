@@ -56,12 +56,52 @@ namespace Natomic.DeadlyAccel
         [ProtoMember(5)]
         public HashSet<String> IgnoredGridNames; // List of grids to ignore damage from 
 
+        [ProtoIgnore]
+        public static int CurrentVersionNumber = 1; 
+        public int VersionNumber = CurrentVersionNumber - 1; // Increases on breaking changes. Defaults to last version number
 
         public override string ToString()
         {
             return MyAPIGateway.Utilities.SerializeToXML(this);
         }
-        public void Save()
+
+        public bool ValidAgainst(Settings other)
+        {
+            return VersionNumber >= other.VersionNumber;
+        }
+        private string GenerateBackupFilename(bool localStorage)
+        {
+            var n = 0;
+            Func<string, bool> check = fname => localStorage ? MyAPIGateway.Utilities.FileExistsInLocalStorage(fname, typeof(Settings)) : MyAPIGateway.Utilities.FileExistsInWorldStorage(fname, typeof(Settings));
+            string bfname;
+            do
+            {
+                bfname = $"{Filename}.backup.{n}";
+            } while (check(bfname));
+            return bfname;
+        }
+        public void Backup(bool localStorage)
+        {
+
+            var fname = GenerateBackupFilename(localStorage);
+            using (var sout = localStorage ? MyAPIGateway.Utilities.WriteFileInLocalStorage(fname, typeof(Settings)) : MyAPIGateway.Utilities.WriteFileInWorldStorage(fname, typeof(Settings)))
+            {
+                sout.Write(this.ToString());
+            }
+        }
+        public void FullBackup()
+        {
+            if (MyAPIGateway.Utilities.FileExistsInLocalStorage(Filename, typeof(Settings)))
+            {
+                Backup(true);
+            }
+            if (MyAPIGateway.Utilities.FileExistsInWorldStorage(Filename, typeof(Settings)))
+            {
+                Backup(false);
+            }
+        }
+
+        public void Save(bool overrwrite = false)
         {
             if (MyAPIGateway.Session.IsServer)
             {
@@ -69,7 +109,7 @@ namespace Natomic.DeadlyAccel
                 {
                     Log.Info("Saving settings");
 
-                    if (!MyAPIGateway.Utilities.FileExistsInLocalStorage(Filename, typeof(Settings)))
+                    if (!MyAPIGateway.Utilities.FileExistsInLocalStorage(Filename, typeof(Settings)) || overrwrite)
                     {
                         SaveLocal();
                     }
