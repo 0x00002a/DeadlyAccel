@@ -54,7 +54,10 @@ namespace Natomic.DeadlyAccel
         public float DamageScaleBase;
 
         [ProtoMember(5)]
-        public HashSet<String> IgnoredGridNames; // List of grids to ignore damage from 
+        public string[] IgnoredGridNames; // List of grids to ignore damage from 
+
+        //[ProtoMember(6)]
+        //public bool IgnoreRespawnShips; // Whether to ignore ships marked IsRespawn
 
         [ProtoIgnore]
         public static int CurrentVersionNumber = 1; 
@@ -77,6 +80,7 @@ namespace Natomic.DeadlyAccel
             do
             {
                 bfname = $"{Filename}.backup.{n}";
+                ++n;
             } while (check(bfname));
             return bfname;
         }
@@ -113,22 +117,26 @@ namespace Natomic.DeadlyAccel
                     {
                         SaveLocal();
                     }
-
-                    using (var sout = MyAPIGateway.Utilities.WriteFileInWorldStorage(Filename, typeof(Settings)))
-                    {
-                        sout.Write(this.ToString());
-                    }
+                    SaveWorld();
 
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"Failed to write save settings: {e}");
+                    Log.Error($"Failed to write config: {e}");
                 }
+            }
+        }
+        private void SaveWorld()
+        {
+            Log.Info("Saving to world config");
+            using (var sout = MyAPIGateway.Utilities.WriteFileInWorldStorage(Filename, typeof(Settings)))
+            {
+                sout.Write(this.ToString());
             }
         }
         public void SaveLocal()
         {
-            Log.Info($"Saving local settings");
+            Log.Info($"Saving to local config");
             using (var sout = MyAPIGateway.Utilities.WriteFileInLocalStorage(Filename, typeof(Settings)))
             {
                 sout.Write(this.ToString());
@@ -145,6 +153,7 @@ namespace Natomic.DeadlyAccel
         {
             if (MyAPIGateway.Utilities.FileExistsInWorldStorage(Filename, typeof(Settings)))
             {
+                Log.Info("Loading from world");
                 return MyAPIGateway.Utilities.ReadFileInWorldStorage(Filename, typeof(Settings));
             }
             else

@@ -134,7 +134,7 @@ namespace Natomic.DeadlyAccel
                 SafeMaximum = 9.81f * 5, // 5g's
                 DamageScaleBase = 1.1f,
                 VersionNumber = Settings.CurrentVersionNumber,
-                IgnoredGridNames = new HashSet<string>(),
+                IgnoredGridNames = new string[0],
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
@@ -148,7 +148,7 @@ namespace Natomic.DeadlyAccel
                 {
                     settings.FullBackup();
                     Log.Info("Old config detected, performing backup and overwriting", "Old config file detected. Your current config file has been backed up but you will need to transfer any changes to the new config file");
-                    DefaultSettings.Save();
+                    DefaultSettings.Save(true);
                     return DefaultSettings;
                 }
                 else
@@ -340,6 +340,8 @@ namespace Natomic.DeadlyAccel
                             // TODO: Debug log this 
                             continue;
                         }
+                        Log.Info($"Grid name: {parent.CubeGrid.CustomName}");
+                        Log.Info($"GRIDS: {Settings_.IgnoredGridNames.Length}");
                         var accel = CalcCharAccel(player, parent);
                         var gridOn = GridStandingOn(player.Character); // This is expensive!
                         if (gridOn != null)
