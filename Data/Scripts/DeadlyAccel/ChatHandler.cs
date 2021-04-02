@@ -36,9 +36,11 @@ add: Adds a config value (for list properties)
 
 remove: Removes a config value (for list properties)
 
-Example (adds Respawn Planet Pod to list of ignored grids and updates the config):
+Example (adds Respawn Planet Pod to list of ignored grids):
 /da config add IgnoredGridNames 'Respawn Planet Pod'
-/da config reload
+
+Then to save it on disk (done automatically on world save, but a reload without a save will forget changes): 
+/da config save 
 
 ";
 
@@ -50,6 +52,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
 
         private List<string> args_cache_ = new List<string>();
         private const string RELOAD_CONF_CMD = "reloadcfg";
+        private const string SAVE_CONF_CMD = "savecfg";
         public void Init(NetworkAPI net, NetSync<Settings> settings)
         {
             net.RegisterChatCommand("", OnHelp);
@@ -75,7 +78,22 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                             OnConfigEdit(argsStr);
                             break;
                         case "reload":
-                            net.SendCommand(RELOAD_CONF_CMD);
+                            if (!MyAPIGateway.Multiplayer.IsServer)
+                            {
+                                net.SendCommand(RELOAD_CONF_CMD);
+                            } else
+                            {
+                                OnConfigReloadServer(0, null, null, DateTime.MinValue);
+                            }
+                            break;
+                        case "save":
+                            if (!MyAPIGateway.Multiplayer.IsServer)
+                            {
+                                net.SendCommand(SAVE_CONF_CMD);
+                            } else
+                            {
+                                OnConfigSaveServer(0, null, null, DateTime.MinValue);
+                            }
                             break;
                         default:
                             var msg = $"Unknown command: '{argsStr}'";
@@ -91,13 +109,18 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
             if (MyAPIGateway.Multiplayer.IsServer)
             {
                 net.RegisterNetworkCommand(RELOAD_CONF_CMD, OnConfigReloadServer);
+                net.RegisterNetworkCommand(SAVE_CONF_CMD, OnConfigSaveServer);
             }
 
             net_settings_ = settings;
         }
+        private void OnConfigSaveServer(ulong steamId, string cmd, byte[] data, DateTime timestamp)
+        {
+            settings_.Save();
+        }
         private void OnConfigReloadServer(ulong steamId, string cmd, byte[] data, DateTime timestamp)
         {
-            Log.Info("Reloading config");
+            Log.Info("Reloading config", "Reloading config");
             net_settings_.SetValue(Settings.TryLoad(settings_));
         }
         private void PrintConfigValue<T>(T value)
@@ -138,7 +161,6 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                 var append = false;
                 if (ch == '\'')
                 {
-                    // End of quoted section 
                     openQuotes = !openQuotes;
                     append = true;
                 }

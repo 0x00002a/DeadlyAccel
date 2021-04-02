@@ -437,6 +437,10 @@ namespace Natomic.DeadlyAccel
         public override void SaveData()
         {
             // executed AFTER world was saved
+            if (MyAPIGateway.Multiplayer.IsServer)
+            {
+                Settings_.Save();
+            }
         }
 
         public override MyObjectBuilder_SessionComponent GetObjectBuilder()
