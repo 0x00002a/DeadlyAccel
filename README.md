@@ -29,14 +29,13 @@ probably not very balanced. I suggest tuning the config to match your personal t
 
 ### Multiplayer
 
-This mod is **untested** in multiplayer. I intend to test it in future and it has a first-try implementation for networking in it but
-expect it to unexpectedly crash and burn if you try it outside singleplayer.
+This mod has limited multiplayer testing, but new features are tested mostly in single-player and only occasionally in multiplayer (since I play mostly single-player).
 
 ### Planned features
 
 This is a whishlist of what I _might_ do with this mod, no promises:
 
-- "Juice" item(s) for increasing resiliance to high g (100% stolen from The Expanse)
+- "Juice" item(s) for increasing resiliance to high g (100% stolen from The Expanse) - In progress
 - Block damage. Ships can be torn apart by acceleration too (well, force), it just requires a lot more of it
 
 ### Support for modded cockpits
@@ -47,14 +46,26 @@ they can be added to the config same as vanilla.
 
 ## Configuration 
 
-- `<CushioningBlocks>`: List of values for cushioning factors. 
+Configuration can be done either through in-game commands (recommended) or through the on-disk XML file. For instructions on how to edit it in-game 
+type (in chat) `/da help config` with the mod loaded.
+
+- `CushioningBlocks`: List of values for cushioning factors. 
 						Final damage per tick is multiplied by the 1 - cushioning value 
-						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%)
-- `<IgnoreJetpack>`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
-- `<SafeMaximum>`: Acceleration greater than this value will cause the character to take damage. Damage is expontential proportioanl to how far
+						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
+                        Note that this property cannot be edited via in-game commands, you must edit the config file on disk directly.
+- `IgnoreJetpack`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
+- `SafeMaximum`: Acceleration greater than this value will cause the character to take damage. Damage is expontential proportioanl to how far
 					the current acceleration is over this value. The default is 5g because I found that to be the most balanced and is reasonable I think 
 					for someone in a futuristic space suit (pilots can apparently survive up to 7g "safely" with proper support but I found this too hard to reach in vanilla)
-- `<DamageScaleBase>`: Exponent for damage scaling. Higher values means damage will increase faster further past the safe point 
+- `DamageScaleBase`: Exponent for damage scaling. Higher values means damage will increase faster further past the safe point 
+- `IgnoredGridNames`: List of grid names that are ignored when checking if the pilot should take damage
+- `IgnoreRespawnShips`: Whether to ignore respawn ships when applying damage. It defaults to `true` since Vanilla drop-pods are otherwise death traps due to their parachutes
+- `VersionNumber`: Ignore this one, its for internal use by the mod
+
+### Breaking changes 
+
+When new options are added to the config file, the old version is backed-up (renamed to "DeadlyAccel.cfg.backup.x" where x is a unique identifer) and the default config is 
+loaded. Any modifications to the old config file must be copied over to the new file.
 
 ## Reuse/Licensing 
 
