@@ -38,6 +38,7 @@ namespace Natomic.DeadlyAccel
             [ProtoMember(3)]
             public float CushionFactor;
         }
+
         private const string Filename = "DeadlyAccel.cfg";
 
         [ProtoMember(1)]
@@ -51,6 +52,10 @@ namespace Natomic.DeadlyAccel
 
         [ProtoMember(4)]
         public float DamageScaleBase;
+
+        [ProtoMember(5)]
+        public HashSet<String> IgnoredGridNames; // List of grids to ignore damage from 
+
 
         public override string ToString()
         {

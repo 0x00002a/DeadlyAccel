@@ -244,7 +244,6 @@ namespace Natomic.DeadlyAccel
             {
                 cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
             }
-
             if (accel > Settings_.SafeMaximum)
             {
                 var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
@@ -311,22 +310,24 @@ namespace Natomic.DeadlyAccel
 
                 if (!player.Character.IsDead)
                 {
-                    if (tick % 60 == 0)
-                    {
-
-                    }
-                    var parentBase = player.Character.Parent;
-
 
                     const int IFRAMES = 3;
                     if (!iframes_lookup_.ContainsKey(player))
                     {
                         iframes_lookup_.Add(player, 0);
                     }
+
+                    var parentBase = player.Character.Parent;
+
                     if ((parentBase != null || !(AccelNotDueToJetpack(player.Character) && Settings_.IgnoreJetpack)))
                     {
 
                         var parent = parentBase as IMyCubeBlock;
+                        if (parent?.CubeGrid != null && Settings_.IgnoredGridNames.Contains(parent.CubeGrid.CustomName))
+                        {
+                            // TODO: Debug log this 
+                            continue;
+                        }
                         var accel = CalcCharAccel(player, parent);
                         var gridOn = GridStandingOn(player.Character); // This is expensive!
                         if (gridOn != null)
