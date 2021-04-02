@@ -67,7 +67,7 @@ namespace Natomic.DeadlyAccel
         private readonly HUDManager hud = new HUDManager();
 
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
-        private readonly ChatHandler cmd_handler_ = new ChatHandler(Settings_);
+        private readonly ChatHandler cmd_handler_ = new ChatHandler();
 
 
         public override void LoadData()
@@ -88,11 +88,12 @@ namespace Natomic.DeadlyAccel
             if (!Net.NetworkAPI.IsInitialized)
             {
                 Net.NetworkAPI.Init(ComChannelId, ModName, "/da");
-                var net_api = Net.NetworkAPI.Instance;
             }
 
             net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
 
+            var net_api = Net.NetworkAPI.Instance;
+            cmd_handler_.Init(net_api, net_settings_);
             BuildCushioningCache(Settings_);
         }
         private Settings LoadSettings()

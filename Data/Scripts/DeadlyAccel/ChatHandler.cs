@@ -51,11 +51,26 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
         {
             net.RegisterChatCommand("", OnHelp);
             net.RegisterChatCommand("help", OnHelp);
-            net.RegisterChatCommand("config edit", OnConfigEdit);
-            net.RegisterChatCommand("config reload", (args) => {
-                net.SendCommand(RELOAD_CONF_CMD);
-            });
+            net.RegisterChatCommand("config", (argsStr) =>
+            {
+                Log.Info($"Got cmd: {argsStr}");
+                var first = argsStr.IndexOf(' ');
+                var arg = argsStr.Substring(0, first + 1);
+                switch (arg)
+                {
+                    case "edit":
+                        OnConfigEdit(argsStr);
+                        break;
+                    case "reload":
+                        net.SendCommand(RELOAD_CONF_CMD);
+                        break;
+                    default:
+                        var msg = $"Unknown command: '{argsStr}'";
+                        Log.Error(msg, msg);
+                        break;
+                }
 
+            });
             if (MyAPIGateway.Multiplayer.IsServer)
             {
                 net.RegisterNetworkCommand(RELOAD_CONF_CMD, OnConfigReloadServer);
@@ -70,7 +85,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
         }
         private void PrintConfigValue<T>(T value)
         {
-            MyAPIGateway.Utilities.ShowMessage(DeadlyAccelSession.ModName, value.ToString());
+            MyAPIGateway.Utilities.ShowMissionScreen(DeadlyAccelSession.ModName, null, null, value.ToString());
         }
         private void ConfigValueCmd<T>(List<string> cmds, ref T field)
         {
@@ -180,7 +195,7 @@ Example (adds Respawn Planet Pod to list of ignored grids and updates the config
                     msg = HELP_TXT;
                     break;
             }
-            MyAPIGateway.Utilities.ShowMessage(DeadlyAccelSession.ModName, msg);
+            PrintConfigValue(msg);
         }
     }
 }
