@@ -69,13 +69,8 @@ namespace Natomic.Logging
         }
         static class Util
         {
-            public static string VERSION = "1.0.0";
-            public static void Rename(string from, string to, Type reference)
-            {
-                var old = MyAPIGateway.Utilities.ReadFileInLocalStorage(from, reference);
-                var to_handle = MyAPIGateway.Utilities.WriteFileInLocalStorage(from, reference);
-                to_handle.Write(old.ReadToEnd());
-            }
+            public static string VERSION = "1.0.1";
+            
             public static string Prefix(LogType t)
             {
                 switch (t)
@@ -109,7 +104,7 @@ namespace Natomic.Logging
             }
             public static void MetaLogErr(string name, string msg)// For when the logger needs to log an error
             {
-                MyLog.Default.WriteLineAndConsole($"[{name}]: Error while logging '{msg}' the rest of this mods log way be unreliable");
+                MyLog.Default.WriteLineAndConsole($"[{name}]: Error while logging '{msg}' the rest of this mods log may be unreliable");
 
             }
         }
@@ -127,7 +122,6 @@ namespace Natomic.Logging
                     {
                         if (!open_)
                         {
-                            Util.MetaLogErr(Name, $"OPEN: {Name}");
                             handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage($"{Name}_{DateTime.UtcNow.ToString("yyyy-mm-dd_HHmmss")}.log", typeof(Log));
                             open_ = true;
                         }
@@ -142,9 +136,7 @@ namespace Natomic.Logging
 == Log for '{mod_name}' START ==
 Logger v{Util.VERSION} written by Natomic
 Start timestamp: {DateTime.Now:u}
-
 -- Start --
-
 ");
                     }
 
@@ -162,7 +154,6 @@ Start timestamp: {DateTime.Now:u}
                 {
                     if (open_)
                     {
-                        Util.MetaLogErr(Name, $"Close {Name}");
                         handle_.Flush();
                         handle_.Close();
                         handle_.Dispose();
@@ -181,7 +172,7 @@ Start timestamp: {DateTime.Now:u}
 
             public string ModName;
 
-            
+
 
             public void Write(LogType t, string message)
             {
@@ -189,10 +180,10 @@ Start timestamp: {DateTime.Now:u}
                 handle.WriteLine(message);
 
             }
-            
+
             public FileLog()
             {
-                foreach(var f in files_.Values)
+                foreach (var f in files_.Values)
                 {
                     f.PrintBanner(ModName);
                 }
@@ -200,7 +191,7 @@ Start timestamp: {DateTime.Now:u}
 
             public void Close()
             {
-                foreach(var f in files_.Values)
+                foreach (var f in files_.Values)
                 {
                     f.PrintClose();
                     f.Close();
@@ -217,7 +208,7 @@ Start timestamp: {DateTime.Now:u}
             #region Fields
             private List<StoredLogMsg> pre_init_msgs_;
             private List<LogSink> writers_ = new List<LogSink>();
-            private StringBuilder sc_ = new StringBuilder();
+            private readonly StringBuilder sc_ = new StringBuilder();
             const string DATE_FMT = "[HH:mm:ss.fffff]";
             private bool session_ready_ = false;
             private bool initialised_ = false;
@@ -353,7 +344,7 @@ Start timestamp: {DateTime.Now:u}
         private static Log instance_;
 
         public static Logger Game { get { return instance_?.game_logs_; } }
-        public static Detail.Logger UI { get { return instance_?.user_logs_; } }
+        public static Logger UI { get { return instance_?.user_logs_; } }
 
         private Logger game_logs_ = null;
         private Logger user_logs_ = null;

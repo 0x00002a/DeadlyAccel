@@ -269,9 +269,9 @@ namespace Natomic.DeadlyAccel
             if (accel > Settings_.SafeMaximum)
             {
                 var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
-                //dmg *= 10; // Scale it up since only run every 10 ticks
                 dmg *= (1 - cushionFactor);
                 player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+                Log.Game.Debug($"Applied damage: {dmg} to player: {player.DisplayName}");
 
                 return true;
             }
@@ -332,11 +332,12 @@ namespace Natomic.DeadlyAccel
             }
             else if (Settings_.IgnoreRespawnShips && grid.IsRespawnGrid)
             {
+                Log.Game.Debug($"Ignored respawn ship: {grid.CustomName}");
                 return true;
             }
             else if (Settings_.IgnoredGridNames.Contains(grid.CustomName))
             {
-                // TODO: Debug log this 
+                Log.Game.Debug($"Ignored grid: {grid.CustomName}");
                 return true;
             } else
             {
