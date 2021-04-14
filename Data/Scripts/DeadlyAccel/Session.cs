@@ -85,15 +85,19 @@ namespace Natomic.DeadlyAccel
 
             Instance = this;
 
-            if (!Net.NetworkAPI.IsInitialized)
+            bool net_inited = Net.NetworkAPI.IsInitialized;
+            if (!net_inited)
             {
                 Net.NetworkAPI.Init(ComChannelId, ModName, "/da");
             }
 
             net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
+            if (!net_inited)
+            {
+                var net_api = Net.NetworkAPI.Instance;
+                cmd_handler_.Init(net_api, net_settings_);
+            }
 
-            var net_api = Net.NetworkAPI.Instance;
-            cmd_handler_.Init(net_api, net_settings_);
             BuildCushioningCache(Settings_);
         }
         private Settings LoadSettings()
