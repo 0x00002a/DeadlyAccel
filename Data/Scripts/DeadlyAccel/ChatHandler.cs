@@ -21,7 +21,7 @@ using System.Collections.Generic;
 using System.Text;
 
 using SENetworkAPI;
-using Digi;
+using Natomic.Logging;
 using Sandbox.ModAPI;
 
 namespace Natomic.DeadlyAccel
@@ -79,14 +79,14 @@ Then to save it on disk (done automatically on world save, but a reload without 
             {
                 try
                 {
-                    Log.Info($"Got cmd: {argsStr}");
+                    Log.Game.Debug($"Got cmd: {argsStr}");
                     var first = argsStr.IndexOf(' ');
                     if (first == -1)
                     {
                         first = argsStr.Length;
                     }
                     var arg = argsStr.Substring(0, first);
-                    Log.Info($"Arg: '{arg}'");
+                    Log.Game.Debug($"Arg: '{arg}'");
                     switch (arg)
                     {
                         case "add":
@@ -115,12 +115,14 @@ Then to save it on disk (done automatically on world save, but a reload without 
                             break;
                         default:
                             var msg = $"Unknown command: '{argsStr}'";
-                            Log.Error(msg, msg);
+                            Log.Game.Error(msg);
+                            Log.UI.Error(msg);
                             break;
                     }
                 } catch(Exception e)
                 {
-                    Log.Error(e, $"Failed to parse command: {e.Message}. This is a bug, please report it along with the contents of your log file");
+                    Log.Game.Error(e);
+                    Log.UI.Error($"Failed to parse command: {e.Message}. This is a bug, please report it along with the contents of your log file");
                 }
 
             });
@@ -172,10 +174,10 @@ Then to save it on disk (done automatically on world save, but a reload without 
         {
             if (!error)
             {
-                Log.Info(msg);
+                Log.Game.Info(msg);
             } else
             {
-                Log.Error(msg);
+                Log.Game.Error(msg);
             }
             MyAPIGateway.Utilities.ShowMessage(DeadlyAccelSession.ModName, msg);
         }
@@ -258,7 +260,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
 
             var cmd = args[0];
             var value = args.Count >= 3 ? args[2] : null;
-            Log.Info($"Config arg: '{args[1]}'");
+            Log.Game.Debug($"Config arg: '{args[1]}'");
             switch(args[1])
             {
                 case "IgnoreJetpack":
@@ -287,7 +289,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
         }
         private void OnHelp(string args)
         {
-            string msg = null;
+            string msg;
             switch(args)
             {
                 case "config":

@@ -21,7 +21,6 @@ using System.Collections.Generic;
 using System.Text;
 using Draygo.API;
 using VRageMath;
-using Digi;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Natomic.DeadlyAccel

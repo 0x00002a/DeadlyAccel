@@ -27,7 +27,7 @@ using VRage.Game.Components;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
-using Digi;
+using Natomic.Logging;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.Game.Entities.Character;
 
@@ -151,7 +151,8 @@ namespace Natomic.DeadlyAccel
                 if (!settings.ValidAgainst(DefaultSettings))
                 {
                     settings.FullBackup();
-                    Log.Info("Old config detected, performing backup and overwriting", "Old config file detected. Your current config file has been backed up but you will need to transfer any changes to the new config file");
+                    Log.Game.Info("Old config detected, performing backup and overwriting");
+                    Log.UI.Info("Old config file detected. Your current config file has been backed up but you will need to transfer any changes to the new config file");
                     DefaultSettings.Save(true);
                     return DefaultSettings;
                 }
@@ -222,7 +223,8 @@ namespace Natomic.DeadlyAccel
                 if (grid == null)
                 {
                     var fileMsg = $"Character parent was not decended from IMyCubeBlock";
-                    Log.Error(fileMsg, $"{fileMsg} - This is likely a problem with your cockpit mod!");
+                    Log.Game.Error(fileMsg);
+                    Log.UI.Error($"{fileMsg} - This is likely a problem with your cockpit mod!");
                 }
                 else
                 {
