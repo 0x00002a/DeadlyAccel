@@ -274,6 +274,7 @@ Start timestamp: {DateTime.Now:u}
                     sc_.Append("[");
                     sc_.Append(Util.Prefix(t));
                     sc_.Append("]: ");
+                    sc_.Append(message);
 
                     if (!session_ready_ || !initialised_)
                     {
@@ -299,7 +300,7 @@ Start timestamp: {DateTime.Now:u}
 
                     foreach (var w in writers_)
                     {
-                        w.Write(t, message);
+                        w.Write(t, sc_.ToString());
                     }
                 }
                 catch (Exception e)
