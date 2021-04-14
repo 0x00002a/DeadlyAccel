@@ -115,18 +115,21 @@ namespace Natomic.Logging
         }
         class FileLog : LogSink
         {
-            struct LogFile
+            class LogFile
             {
                 public string Name;
 
-                private TextWriter handle_;
+                private TextWriter handle_ = null;
+                private bool open_ = false;
                 public TextWriter Handle
                 {
                     get
                     {
-                        if (handle_ == null)
+                        if (!open_)
                         {
-                            handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage(Name, typeof(Log));
+                            Util.MetaLogErr(Name, $"OPEN: {Name}");
+                            handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage($"{Name}_{DateTime.UtcNow.ToString("yyyy-mm-dd_HHmmss")}.log", typeof(Log));
+                            open_ = true;
                         }
                         return handle_;
                     }
@@ -155,27 +158,25 @@ Start timestamp: {DateTime.Now:u}
                     }
                 }
 
-                public void Save()
-                {
-                    Close();
-                    Util.Rename(Name, Util.FmtDateStamped(Name), typeof(Log));
-                }
                 public void Close()
                 {
-                    if (handle_ != null)
+                    if (open_)
                     {
+                        Util.MetaLogErr(Name, $"Close {Name}");
                         handle_.Flush();
                         handle_.Close();
+                        handle_.Dispose();
                         handle_ = null;
+                        open_ = false;
                     }
                 }
 
             }
-            private Dictionary<LogType, LogFile> files_ = new Dictionary<LogType, LogFile>
+            private readonly Dictionary<LogType, LogFile> files_ = new Dictionary<LogType, LogFile>
             {
-                { LogType.Error, new LogFile{Name = "error.log" } },
-                {LogType.Info, new LogFile{Name = "info.log"} },
-                {LogType.Debug, new LogFile{Name = "debug.log" } },
+                { LogType.Error, new LogFile{Name = "error" } },
+                {LogType.Info, new LogFile{Name = "info"} },
+                {LogType.Debug, new LogFile{Name = "debug" } },
             };
 
             public string ModName;
@@ -202,7 +203,7 @@ Start timestamp: {DateTime.Now:u}
                 foreach(var f in files_.Values)
                 {
                     f.PrintClose();
-                    f.Save();
+                    f.Close();
                 }
             }
         }
@@ -239,14 +240,14 @@ Start timestamp: {DateTime.Now:u}
 
             public void Close()
             {
-                if (initialised_)
+                for(var n = 0; n != writers_.Count; ++n)
                 {
-                    foreach (var w in writers_)
-                    {
-                        w?.Close();
-                    }
-                    writers_ = null;
+                    writers_[n].Close();
+                    writers_[n] = null;
                 }
+                
+                writers_.Clear();
+                writers_ = null;
                 initialised_ = false;
                 MyAPIGateway.Session.OnSessionReady -= OnSessionReady;
             }
@@ -353,8 +354,8 @@ Start timestamp: {DateTime.Now:u}
         public static Logger Game { get { return instance_?.game_logs_; } }
         public static Detail.Logger UI { get { return instance_?.user_logs_; } }
 
-        private Logger game_logs_ = new Logger();
-        private Logger user_logs_ = new Logger();
+        private Logger game_logs_ = null;
+        private Logger user_logs_ = null;
 
 
         public string ModName;
@@ -365,35 +366,40 @@ Start timestamp: {DateTime.Now:u}
             instance_ = this;
             ModName = ModContext.ModName;
             InitLoggers();
-            LogInit();
         }
         private void InitLoggers()
         {
             try
             {
-                game_logs_.Init(this);
-                user_logs_.Init(this);
-
-                if (!MyAPIGateway.Utilities.IsDedicated)
+                if (game_logs_ == null)
                 {
-                    user_logs_.Add(new ChatLog() { ModName = ModName });
+                    game_logs_ = new Logger();
+                    game_logs_.Init(this);
+
+                    
+                    game_logs_.Add(new FileLog { ModName = ModName });
+                    game_logs_.Add(new GameLog());
                 }
-                game_logs_.Add(new FileLog());
-                game_logs_.Add(new GameLog());
+                if (user_logs_ == null)
+                {
+                    user_logs_ = new Logger();
+                    user_logs_.Init(this);
+                    if (!MyAPIGateway.Utilities.IsDedicated)
+                    {
+                        user_logs_.Add(new ChatLog() { ModName = ModName });
+                    }
+                }
              } catch(Exception e)
             {
                 Util.MetaLogErr(ModName, "Failed to init loggers: " + Util.FmtErr(e));
             }
             
         }
-        private void LogInit()
-        {
-        }
         protected override void UnloadData()
         {
             game_logs_.Close();
             user_logs_.Close();
-            instance_ = null; // Don't want memory leaks
+            instance_ = null; 
         }
         
        
