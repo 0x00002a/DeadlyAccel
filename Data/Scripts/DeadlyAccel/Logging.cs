@@ -284,6 +284,10 @@ namespace Natomic.Logging
             {
                 LogMsg(LogType.Error, msg);
             }
+            public void Error(Exception e)
+            {
+                Error(Util.FmtErr(e));
+            }
             /// <summary>
             /// <para>Log a message with type Debug</para>
             /// </summary>
@@ -309,7 +313,7 @@ namespace Natomic.Logging
         private static Log instance_;
 
         public static Logger Game { get { return instance_?.game_logs_; } }
-        public static Detail.Logger User { get { return instance_?.user_logs_; } }
+        public static Detail.Logger UI { get { return instance_?.user_logs_; } }
 
         private Logger game_logs_ = new Logger();
         private Logger user_logs_ = new Logger();
