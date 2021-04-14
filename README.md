@@ -67,12 +67,18 @@ type (in chat) `/da help config` with the mod loaded.
 When new options are added to the config file, the old version is backed-up (renamed to "DeadlyAccel.cfg.backup.x" where x is a unique identifer) and the default config is 
 loaded. Any modifications to the old config file must be copied over to the new file.
 
+## Bug reports
+
+Report any problems with the mod here:
+https://github.com/0x00002a/DeadlyAccel/issues/new. Please include a copy of
+your log files and steps to  reproduce it. You can find your log files at
+`%appdata%\SpaceEngineers\Storage\2422178213.sbm_DeadlyAccel`.
+
 ## Reuse/Licensing 
 
 All of _my_ code in this repository/mod is licensed under the GNU GPLv3. Some parts of this code are not my own work and I cannot and do not relicense them.
 The parts of this code ***not*** licensed under the GNU GPv3 are listed below, if in doubt, all my code has the license at the top:
 
-- `Log.cs` (author Digi)
 - Anything in `SENetAPI` (SENetworkAPI)
 - Anything in `TextHudAPI` (TextHudAPI mod)
 
@@ -97,7 +103,8 @@ Please contact the respective authors for redistribution rights for these parts 
 ```
 
 tl;dr Yes you can reupload part or all of it as long as you release all of the source including modifcations made, keep all existing license notices, and use the GPLv3
-license for any modifications.
+license for any modifications. Note that "modifications" includes the entire mod it is distributed as part of, so if you want to use _any_ part of this mod you need to 
+make the whole thing GPLv3.
 
 ### Source
 
