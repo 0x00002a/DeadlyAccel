@@ -69,7 +69,7 @@ namespace Natomic.Logging
         }
         static class Util
         {
-
+            public static string VERSION = "1.0.0";
             public static void Rename(string from, string to, Type reference)
             {
                 var old = MyAPIGateway.Utilities.ReadFileInLocalStorage(from, reference);
@@ -115,65 +115,95 @@ namespace Natomic.Logging
         }
         class FileLog : LogSink
         {
-            private TextWriter err_writer_;
-            private TextWriter info_writer_;
-            private TextWriter debug_writer_;
-
-            public const string INFO_NAME = "info.log";
-            public const string ERROR_NAME = "error.log";
-            public const string DEBUG_NAME = "debug.log";
-
-            private TextWriter GetHandle(string file, System.Type reference)
+            struct LogFile
             {
-                var n = 0;
-                var tmp_name = file;
-                while (MyAPIGateway.Utilities.FileExistsInLocalStorage(tmp_name, reference))
+                public string Name;
+
+                private TextWriter handle_;
+                public TextWriter Handle
                 {
-                    tmp_name += n;
-                    ++n;
+                    get
+                    {
+                        if (handle_ == null)
+                        {
+                            handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage(Name, typeof(Log));
+                        }
+                        return handle_;
+                    }
                 }
-                return MyAPIGateway.Utilities.WriteFileInLocalStorage(tmp_name, reference);
+                public void PrintBanner(string mod_name)
+                {
+                    if (handle_ == null)
+                    {
+                        Handle.Write($@"
+== Log for '{mod_name}' START ==
+Logger v{Util.VERSION} written by Natomic
+Start timestamp: {DateTime.Now:u}
+
+-- Start --
+
+");
+                    }
+
+                }
+
+                public void PrintClose()
+                {
+                    if (handle_ != null)
+                    {
+                        Handle.WriteLine("-- End --");
+                    }
+                }
+
+                public void Save()
+                {
+                    Close();
+                    Util.Rename(Name, Util.FmtDateStamped(Name), typeof(Log));
+                }
+                public void Close()
+                {
+                    if (handle_ != null)
+                    {
+                        handle_.Flush();
+                        handle_.Close();
+                        handle_ = null;
+                    }
+                }
 
             }
-            private TextWriter LogTypeToHandle(LogType t)
+            private Dictionary<LogType, LogFile> files_ = new Dictionary<LogType, LogFile>
             {
-                switch (t)
-                {
-                    case LogType.Debug:
-                        return debug_writer_;
-                    case LogType.Error:
-                        return err_writer_;
-                    case LogType.Info:
-                        return info_writer_;
-                }
-                throw new Exception("LogTypeToHandle didn't catch all the branches... wat");
-            }
+                { LogType.Error, new LogFile{Name = "error.log" } },
+                {LogType.Info, new LogFile{Name = "info.log"} },
+                {LogType.Debug, new LogFile{Name = "debug.log" } },
+            };
+
+            public string ModName;
+
+            
 
             public void Write(LogType t, string message)
             {
-                var handle = LogTypeToHandle(t);
+                var handle = files_[t].Handle;
                 handle.WriteLine(message);
 
             }
+            
             public FileLog()
             {
-                err_writer_ = GetHandle(ERROR_NAME, typeof(Log));
-                info_writer_ = GetHandle(INFO_NAME, typeof(Log));
-                debug_writer_ = GetHandle(DEBUG_NAME, typeof(Log));
-            }
-            private void SaveDated()
-            {
-                err_writer_.Close();
-                info_writer_.Close();
-                debug_writer_.Close();
-                Util.Rename(ERROR_NAME, Util.FmtDateStamped(ERROR_NAME), typeof(Log));
-                Util.Rename(INFO_NAME, Util.FmtDateStamped(INFO_NAME), typeof(Log));
-                Util.Rename(DEBUG_NAME, Util.FmtDateStamped(DEBUG_NAME), typeof(Log));
+                foreach(var f in files_.Values)
+                {
+                    f.PrintBanner(ModName);
+                }
             }
 
             public void Close()
             {
-                SaveDated();
+                foreach(var f in files_.Values)
+                {
+                    f.PrintClose();
+                    f.Save();
+                }
             }
         }
         struct StoredLogMsg
@@ -198,6 +228,7 @@ namespace Natomic.Logging
             {
                 initialised_ = true;
                 mod_name_ = ses.ModName;
+                MyAPIGateway.Session.OnSessionReady += OnSessionReady;
             }
 
             public void Add(LogSink sink)
@@ -243,7 +274,7 @@ namespace Natomic.Logging
                     sc_.Append(Util.Prefix(t));
                     sc_.Append("]: ");
 
-                    if (!initialised_)
+                    if (!session_ready_ || !initialised_)
                     {
                         if (pre_init_msgs_ == null)
                         {
@@ -252,7 +283,7 @@ namespace Natomic.Logging
                         pre_init_msgs_.Add(new StoredLogMsg { Msg = sc_.ToString(), Type = t });
 
                     }
-                    if (initialised_ && pre_init_msgs_ != null)
+                    else if (pre_init_msgs_ != null)
                     {
                         foreach (var msg in pre_init_msgs_)
                         {
@@ -334,6 +365,7 @@ namespace Natomic.Logging
             instance_ = this;
             ModName = ModContext.ModName;
             InitLoggers();
+            LogInit();
         }
         private void InitLoggers()
         {
@@ -353,6 +385,9 @@ namespace Natomic.Logging
                 Util.MetaLogErr(ModName, "Failed to init loggers: " + Util.FmtErr(e));
             }
             
+        }
+        private void LogInit()
+        {
         }
         protected override void UnloadData()
         {
