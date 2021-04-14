@@ -176,10 +176,15 @@ namespace Natomic.Logging
                 SaveDated();
             }
         }
+        struct StoredLogMsg
+        {
+            public LogType Type;
+            public string Msg;
+        }
         class Logger
         {
             #region Fields
-            private List<Tuple<string, LogType>> pre_init_msgs_;
+            private List<StoredLogMsg> pre_init_msgs_;
             private List<LogSink> writers_ = new List<LogSink>();
             private StringBuilder sc_ = new StringBuilder();
             const string DATE_FMT = "[HH:mm:ss.fffff]";
@@ -242,9 +247,9 @@ namespace Natomic.Logging
                     {
                         if (pre_init_msgs_ == null)
                         {
-                            pre_init_msgs_ = new List<Tuple<string, LogType>>();
+                            pre_init_msgs_ = new List<StoredLogMsg>();
                         }
-                        pre_init_msgs_.Add(Tuple.Create(sc_.ToString(), t));
+                        pre_init_msgs_.Add(new StoredLogMsg { Msg = sc_.ToString(), Type = t });
 
                     }
                     if (initialised_ && pre_init_msgs_ != null)
@@ -253,9 +258,11 @@ namespace Natomic.Logging
                         {
                             foreach (var w in writers_)
                             {
-                                w.Write(msg.Item2, msg.Item1);
+                                w.Write(msg.Type, msg.Msg);
                             }
                         }
+                        pre_init_msgs_.Clear();
+                        pre_init_msgs_ = null;
                     }
 
                     foreach (var w in writers_)

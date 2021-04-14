@@ -415,10 +415,10 @@ namespace Natomic.DeadlyAccel
                 }
             }
 
-            catch (Exception e) // NOTE: never use try-catch for code flow or to ignore errors! catching has a noticeable performance impact.
+            catch (Exception e) 
             {
-                Log.Error(e, e.Message);
-
+                Log.Game.Error(e);
+                Log.UI.Error(e.Message);
             }
         }
 
@@ -432,7 +432,9 @@ namespace Natomic.DeadlyAccel
             }
             catch (Exception e)
             {
-                Log.Error($"Failed to draw: {e}", "Failed to draw, see log for details");
+                Log.Game.Error($"Failed to draw");
+                Log.Game.Error(e);
+                Log.UI.Error("Failed to draw, see log for details");
             }
         }
 

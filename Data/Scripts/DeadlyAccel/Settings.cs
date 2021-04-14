@@ -21,8 +21,8 @@ using System.Collections.Generic;
 using System.Text;
 using ProtoBuf;
 using Sandbox.ModAPI;
-using Digi;
 using System.IO;
+using Natomic.Logging;
 
 namespace Natomic.DeadlyAccel
 {
@@ -111,7 +111,7 @@ namespace Natomic.DeadlyAccel
             {
                 try
                 {
-                    Log.Info("Saving settings");
+                    Log.Game.Debug("Saving settings");
 
                     if (!MyAPIGateway.Utilities.FileExistsInLocalStorage(Filename, typeof(Settings)) || overrwrite)
                     {
@@ -122,13 +122,13 @@ namespace Natomic.DeadlyAccel
                 }
                 catch (Exception e)
                 {
-                    Log.Error($"Failed to write config: {e}");
+                    Log.Game.Error($"Failed to write config: {e}");
                 }
             }
         }
         private void SaveWorld()
         {
-            Log.Info("Saving to world config");
+            Log.Game.Info("Saving to world config");
             using (var sout = MyAPIGateway.Utilities.WriteFileInWorldStorage(Filename, typeof(Settings)))
             {
                 sout.Write(this.ToString());
@@ -136,7 +136,7 @@ namespace Natomic.DeadlyAccel
         }
         public void SaveLocal()
         {
-            Log.Info($"Saving to local config");
+            Log.Game.Debug($"Saving to local config");
             using (var sout = MyAPIGateway.Utilities.WriteFileInLocalStorage(Filename, typeof(Settings)))
             {
                 sout.Write(this.ToString());
@@ -144,7 +144,7 @@ namespace Natomic.DeadlyAccel
         }
         private static Settings LoadFromStorage(TextReader fin)
         {
-            Log.Info($"Loading settings from {Filename}");
+            Log.Game.Info($"Loading settings from {Filename}");
             var content = fin.ReadToEnd();
             var settings = MyAPIGateway.Utilities.SerializeFromXML<Settings>(content);
             return settings;
@@ -153,12 +153,12 @@ namespace Natomic.DeadlyAccel
         {
             if (MyAPIGateway.Utilities.FileExistsInWorldStorage(Filename, typeof(Settings)))
             {
-                Log.Info("Loading from world");
+                Log.Game.Debug("Loading from world");
                 return MyAPIGateway.Utilities.ReadFileInWorldStorage(Filename, typeof(Settings));
             }
             else
             {
-                Log.Info("Loading from local ");
+                Log.Game.Debug("Loading from local ");
 
                 return MyAPIGateway.Utilities.ReadFileInLocalStorage(Filename, typeof(Settings));
             }
@@ -181,7 +181,9 @@ namespace Natomic.DeadlyAccel
             }
             catch (Exception e)
             {
-                Log.Error($"Failed to load settings: {e}", "Failed to load settings");
+                Log.Game.Error("Failed to load settings");
+                Log.Game.Error(e);
+                Log.UI.Error("Failed to load settings");
             }
             return fallback;
         }
