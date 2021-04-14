@@ -38,12 +38,12 @@ namespace Natomic.Logging
             Error
         }
 
-        interface LogStream
+        interface LogSink
         {
             void Write(LogType t, string message);
             void Close();
         }
-        class GameLog : LogStream
+        class GameLog : LogSink
         {
             public void Write(LogType t, string message)
             {
@@ -52,7 +52,7 @@ namespace Natomic.Logging
             public void Close() { }
 
         }
-        class ChatLog : LogStream
+        class ChatLog : LogSink
         {
             public string ModName;
             public void Write(LogType t, string message)
@@ -107,8 +107,13 @@ namespace Natomic.Logging
             {
                 return $"{filename}.{DateTime.UtcNow.ToString("_u")}";
             }
+            public static void MetaLogErr(string name, string msg)// For when the logger needs to log an error
+            {
+                MyLog.Default.WriteLineAndConsole($"[{name}]: Error while logging '{msg}' the rest of this mods log way be unreliable");
+
+            }
         }
-        class FileLog : LogStream
+        class FileLog : LogSink
         {
             private TextWriter err_writer_;
             private TextWriter info_writer_;
@@ -171,7 +176,127 @@ namespace Natomic.Logging
                 SaveDated();
             }
         }
+        class Logger
+        {
+            #region Fields
+            private List<Tuple<string, LogType>> pre_init_msgs_;
+            private List<LogSink> writers_ = new List<LogSink>();
+            private StringBuilder sc_ = new StringBuilder();
+            const string DATE_FMT = "[HH:mm:ss.fffff]";
+            private bool session_ready_ = false;
+            private bool initialised_ = false;
+            private string mod_name_;
+            #endregion
+
+            #region General methods
+            public void Init(Log ses)
+            {
+                initialised_ = true;
+                mod_name_ = ses.ModName;
+            }
+
+            public void Add(LogSink sink)
+            {
+                writers_.Add(sink);
+            }
+
+
+            public void Close()
+            {
+                if (initialised_)
+                {
+                    foreach (var w in writers_)
+                    {
+                        w?.Close();
+                    }
+                    writers_ = null;
+                }
+                initialised_ = false;
+                MyAPIGateway.Session.OnSessionReady -= OnSessionReady;
+            }
+            private void OnSessionReady()
+            {
+                session_ready_ = true;
+            }
+            #endregion
+            #region Logging 
+            /// <summary>
+            /// <para>Log a message based on type. You probably want to use one of the helper overloads instead (Info, Debug, Error, etc)</para>
+            /// </summary>
+            public void LogMsg(LogType t, string message)
+            {
+                try
+                {
+                    sc_.Clear();
+
+                    if (!initialised_ || !session_ready_)
+                    {
+                        sc_.Append("[Pre Init]");
+                    }
+                    sc_.Append(DateTime.UtcNow.ToString(DATE_FMT));
+                    sc_.Append("[");
+                    sc_.Append(Util.Prefix(t));
+                    sc_.Append("]: ");
+
+                    if (!initialised_)
+                    {
+                        if (pre_init_msgs_ == null)
+                        {
+                            pre_init_msgs_ = new List<Tuple<string, LogType>>();
+                        }
+                        pre_init_msgs_.Add(Tuple.Create(sc_.ToString(), t));
+
+                    }
+                    if (initialised_ && pre_init_msgs_ != null)
+                    {
+                        foreach (var msg in pre_init_msgs_)
+                        {
+                            foreach (var w in writers_)
+                            {
+                                w.Write(msg.Item2, msg.Item1);
+                            }
+                        }
+                    }
+
+                    foreach (var w in writers_)
+                    {
+                        w.Write(t, message);
+                    }
+                }
+                catch (Exception e)
+                {
+                    Util.MetaLogErr(mod_name_, Util.FmtErr(e));
+                }
+            }
+
+            /// <summary>
+            /// <para>Log a message with type Info</para>
+            /// </summary>
+            public void Info(string message)
+            {
+                LogMsg(LogType.Info, message);
+            }
+            /// <summary>
+            /// <para>Log a message with type Error</para>
+            /// </summary>
+            /// <param name="msg"></param>
+            public void Error(string msg)
+            {
+                LogMsg(LogType.Error, msg);
+            }
+            /// <summary>
+            /// <para>Log a message with type Debug</para>
+            /// </summary>
+            /// <param name="msg"></param>
+            public void Debug(string msg)
+            {
+                LogMsg(LogType.Debug, msg);
+            }
+
+        }
+        #endregion
     }
+
     /// <summary>
     /// <para>Basic logger. Logs to 3 files, the game log, and the chat by default</para>
     /// <para>For redistribution rights, see the license at the top. If you have any questions @Natomic on the Keen discord should find me</para>
@@ -179,140 +304,53 @@ namespace Natomic.Logging
     /// </summary>
 
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
-    class Log
+    class Log: MySessionComponentBase
     {
         private static Log instance_;
 
+        public static Logger Game { get { return instance_?.game_logs_; } }
+        public static Detail.Logger User { get { return instance_?.user_logs_; } }
 
-        private List<LogStream> writers_ = new List<LogStream>();
-        private List<Tuple<string, LogType>> pre_init_msgs_;
-        private StringBuilder sc_ = new StringBuilder();
-        private bool initialised_ = false;
-        private string mod_name_;
-        private bool session_ready_ = false;
+        private Logger game_logs_ = new Logger();
+        private Logger user_logs_ = new Logger();
 
-        const string DATE_FMT = "[HH:mm:ss.fffff]";
 
-        public void LoadData()
+        public string ModName;
+
+
+        public override void LoadData()
         {
             instance_ = this;
+            ModName = ModContext.ModName;
             InitLoggers();
         }
         private void InitLoggers()
         {
             try
             {
+                game_logs_.Init(this);
+                user_logs_.Init(this);
+
                 if (!MyAPIGateway.Utilities.IsDedicated)
                 {
-                    writers_.Add(new ChatLog() { ModName = mod_name_ });
+                    user_logs_.Add(new ChatLog() { ModName = ModName });
                 }
-                writers_.Add(new FileLog());
-                writers_.Add(new GameLog());
-
-                initialised_ = true;
+                game_logs_.Add(new FileLog());
+                game_logs_.Add(new GameLog());
              } catch(Exception e)
             {
-                MetaLogErr("Failed to init loggers: " + Util.FmtErr(e));
+                Util.MetaLogErr(ModName, "Failed to init loggers: " + Util.FmtErr(e));
             }
             
         }
-        protected void UnloadData()
+        protected override void UnloadData()
         {
-            Close();
+            game_logs_.Close();
+            user_logs_.Close();
             instance_ = null; // Don't want memory leaks
         }
-        public void Close()
-        {
-            if (initialised_)
-            {
-                foreach(var w in writers_)
-                {
-                    w?.Close();
-                }
-                writers_ = null;
-            }
-            initialised_ = false;
-            MyAPIGateway.Session.OnSessionReady -= OnSessionReady;
-        }
-        private void OnSessionReady()
-        {
-            session_ready_ = true;
-        }
-        // For when the logger needs to log an error
-        private void MetaLogErr(string msg)
-        {
-            MyLog.Default.WriteLineAndConsole($"[{mod_name_}]: Error while logging '{msg}' the rest of this mods log way be unreliable");
-
-        }
+        
        
-        /// <summary>
-        /// <para>Log a message based on type. You probably want to use one of the helper overloads instead (Info, Debug, Error, etc)</para>
-        /// </summary>
-        public void LogMsg(LogType t, string message)
-        {
-            try
-            {
-                sc_.Clear();
-                
-                if (!initialised_ || !session_ready_)
-                {
-                    sc_.Append("[Pre Init]");
-                }
-                sc_.Append(DateTime.UtcNow.ToString(DATE_FMT));
-                sc_.Append("[");
-                sc_.Append(Util.Prefix(t));
-                sc_.Append("]: ");
-
-                if (!initialised_)
-                {
-                    if (pre_init_msgs_ == null)
-                    {
-                        pre_init_msgs_ = new List<Tuple<string, LogType>>();
-                    }
-                    pre_init_msgs_.Add(Tuple.Create(sc_.ToString(), t));
-
-                }
-                if (initialised_ && pre_init_msgs_ != null)
-                {
-                    foreach (var msg in pre_init_msgs_) {
-                        foreach (var w in writers_)
-                        {
-                            w.Write(msg.Item2, msg.Item1);
-                        }
-                    }
-                }
-
-                foreach (var w in writers_)
-                {
-                    w.Write(t, message);
-                }
-            } catch(Exception e)
-            {
-                MetaLogErr(Util.FmtErr(e));
-            }
-        }
-
-        /// <summary>
-        /// <para>Log a message with type Info</para>
-        /// </summary>
-        public static void Info(string message) {
-            instance_?.LogMsg(LogType.Info, message);
-        }
-        /// <summary>
-        /// <para>Log a message with type Error</para>
-        /// </summary>
-        /// <param name="msg"></param>
-        public static void Error(string msg) {
-            instance_?.LogMsg(LogType.Error, msg);
-        }
-        /// <summary>
-        /// <para>Log a message with type Debug</para>
-        /// </summary>
-        /// <param name="msg"></param>
-        public static void Debug(string msg)
-        {
-            instance_?.LogMsg(LogType.Debug, msg);
-        }
-
+       
     }
 }
