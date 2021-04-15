@@ -36,6 +36,7 @@ using VRage.Input;
 using VRageMath;
 using System.Linq;
 using VRage.Game.ModAPI.Interfaces;
+using Natomic.Logging.Detail;
 
 namespace Natomic.DeadlyAccel
 {
@@ -86,6 +87,7 @@ namespace Natomic.DeadlyAccel
             // ...and many more things, ask in #programming-modding in keen's discord for what you want to do to be pointed at the available things to use.
 
             Instance = this;
+            InitLogger();
 
             InitNetwork();
             if (MyAPIGateway.Multiplayer.IsServer)
@@ -98,6 +100,14 @@ namespace Natomic.DeadlyAccel
             }
             InitPlayerManager();
             InitPlayerEvents();
+        }
+        private void InitLogger()
+        {
+            var game = Log.Game;
+            game.Add(new LogFilter { MaxLogLevel = LogType.Info, Sink = new GameLog { ModName = ModName } });
+            game.Add(new FileLog { ModName = ModName });
+
+            Log.UI.Add(new LogFilter { MaxLogLevel = LogType.Error, Sink = new ChatLog { ModName = ModName } });
         }
         private void InitPlayerEvents()
         {

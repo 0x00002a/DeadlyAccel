@@ -33,9 +33,9 @@ namespace Natomic.Logging
     {
         enum LogType
         {
-            Debug,
-            Info,
-            Error
+            Debug = 3,
+            Info = 2,
+            Error = 0,
         }
 
         interface LogSink
@@ -67,6 +67,24 @@ namespace Natomic.Logging
 
             public void Close() { }
 
+        }
+        class LogFilter: LogSink
+        {
+            public LogType MaxLogLevel;
+            public LogSink Sink;
+
+            public void Write(LogType t, string str)
+            {
+                if (t <= MaxLogLevel)
+                {
+                    Sink.Write(t, str);
+                }
+            }
+
+            public void Close()
+            {
+                Sink.Close();
+            }
         }
         static class Util
         {
@@ -117,7 +135,9 @@ namespace Natomic.Logging
 
                 private TextWriter handle_ = null;
                 private bool open_ = false;
-                public TextWriter Handle
+                private int messages_since_flush_ = 0;
+                private const int MESSAGES_PER_FLUSH = 100;
+                private TextWriter Handle
                 {
                     get
                     {
@@ -143,6 +163,15 @@ All timestamps are in UTC
                     }
 
                 }
+                public void Write(string str)
+                {
+                    if (messages_since_flush_ >= MESSAGES_PER_FLUSH)
+                    {
+                        Handle.Flush();
+                    }
+                    Handle.WriteLine(str);
+
+                }
 
                 public void PrintClose()
                 {
@@ -158,7 +187,7 @@ All timestamps are in UTC
                     {
                         handle_.Flush();
                         handle_.Close();
-                        handle_.Dispose();
+                        handle_.Dispose(); // Yeah I'm paranoid ok
                         handle_ = null;
                         open_ = false;
                     }
@@ -178,9 +207,7 @@ All timestamps are in UTC
 
             public void Write(LogType t, string message)
             {
-                var handle = files_[t].Handle;
-                handle.WriteLine(message);
-
+                files_[t].Write(message);
             }
 
             public FileLog()
@@ -215,6 +242,7 @@ All timestamps are in UTC
             private bool session_ready_ = false;
             private bool initialised_ = false;
             private string mod_name_;
+
             #endregion
 
             #region General methods
@@ -345,7 +373,7 @@ All timestamps are in UTC
     {
         private static Log instance_;
 
-        public static Logger Game { get { return instance_?.game_logs_; } }
+        public static Logger Game { get {  return instance_?.game_logs_; } }
         public static Logger UI { get { return instance_?.user_logs_; } }
 
         private Logger game_logs_ = null;
@@ -361,6 +389,20 @@ All timestamps are in UTC
             ModName = ModContext.ModName;
             InitLoggers();
         }
+        private void AddDefaultSinksPriv()
+        {
+            game_logs_.Add(new FileLog { ModName = ModName });
+            game_logs_.Add(new GameLog { ModName = ModName });
+
+            if (!MyAPIGateway.Utilities.IsDedicated)
+            {
+                user_logs_.Add(new ChatLog() { ModName = ModName });
+            }
+        }
+        public static void AddDefaultSinks()
+        {
+            instance_?.AddDefaultSinksPriv();
+        }
         private void InitLoggers()
         {
             try
@@ -370,18 +412,11 @@ All timestamps are in UTC
                     game_logs_ = new Logger();
                     game_logs_.Init(this);
 
-                    
-                    game_logs_.Add(new FileLog { ModName = ModName });
-                    game_logs_.Add(new GameLog { ModName = ModName });
                 }
                 if (user_logs_ == null)
                 {
                     user_logs_ = new Logger();
                     user_logs_.Init(this);
-                    if (!MyAPIGateway.Utilities.IsDedicated)
-                    {
-                        user_logs_.Add(new ChatLog() { ModName = ModName });
-                    }
                 }
              } catch(Exception e)
             {
