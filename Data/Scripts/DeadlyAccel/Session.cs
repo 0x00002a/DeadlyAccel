@@ -59,7 +59,7 @@ namespace Natomic.DeadlyAccel
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
         private PlayerManager player_;
-        private readonly List<IMyPlayer> player_cache_ = new List<IMyPlayer>();
+        private readonly Dictionary<long, IMyPlayer> player_cache_ = new Dictionary<long, IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
         private Settings Settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
@@ -67,7 +67,8 @@ namespace Natomic.DeadlyAccel
 
         private readonly ChatHandler cmd_handler_ = new ChatHandler();
 
-        bool IsClient { get { return !(MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer); } }
+        bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
+        bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
 
 
         public override void LoadData()
@@ -85,6 +86,26 @@ namespace Natomic.DeadlyAccel
 
             Instance = this;
 
+            InitNetwork();
+            if (MyAPIGateway.Multiplayer.IsServer)
+            {
+                BuildCushioningCache(Settings_);
+            }
+            if (IsClient || IsSP)
+            {
+                hud = new HUDManager();
+            }
+            InitPlayerManager();
+            InitPlayerEvents();
+        }
+        private void InitPlayerEvents()
+        {
+            MyVisualScriptLogicProvider.PlayerConnected += OnPlayerConnect;
+            MyVisualScriptLogicProvider.PlayerDisconnected += OnPlayerDC;
+
+        }
+        private void InitNetwork()
+        {
             bool net_inited = Net.NetworkAPI.IsInitialized;
             if (!net_inited)
             {
@@ -99,14 +120,10 @@ namespace Natomic.DeadlyAccel
                 cmd_handler_.Init(net_api, net_settings_);
                 Log.Game.Info("Initialised command handler");
             }
-            if (MyAPIGateway.Multiplayer.IsServer)
-            {
-                BuildCushioningCache(Settings_);
-            } else
-            {
-                hud = new HUDManager();
-            }
-            player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
+        }
+        private void InitPlayerManager()
+        {
+player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
             if (IsClient)
             {
 
@@ -121,7 +138,7 @@ namespace Natomic.DeadlyAccel
                 };
                 player_.OnSkipDamage += () => hud?.ClearWarning();
             }
-            else
+            if (!IsClient || IsSP)
             {
                 player_.OnApplyDamage += dmg =>
                             {
@@ -198,6 +215,14 @@ namespace Natomic.DeadlyAccel
             }
 
         }
+        private void OnPlayerConnect(long playerId)
+        {
+            UpdatePlayersCache();
+        }
+        public void OnPlayerDC(long playerId)
+        {
+            player_cache_.Remove(playerId);
+        }
         public static string FormatCushionLookup(string typeid, string subtypeid)
         {
             return $"{typeid}-{subtypeid}";
@@ -222,6 +247,10 @@ namespace Natomic.DeadlyAccel
             // executed when world is exited to unregister events and stuff
 
             Instance = null; // important for avoiding this object to remain allocated in memory
+            MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
+            MyVisualScriptLogicProvider.PlayerDisconnected -= OnPlayerDC;
+
+
         }
 
         public override void HandleInput()
@@ -241,22 +270,30 @@ namespace Natomic.DeadlyAccel
         }
         private void UpdatePlayersCache()
         {
-            player_cache_.Clear();
-            MyAPIGateway.Players.GetPlayers(player_cache_);
+            MyAPIGateway.Multiplayer.Players.GetPlayers(null, p => {
+                player_cache_[p.IdentityId] = p;
+                return false;
+            });
         }
         
         private void PlayersUpdate()
         {
-            foreach(var p in player_cache_)
+            bool needs_cache_update = false;
+            foreach(var p in player_cache_.Values)
             {
                 if (p == null)
                 {
                     Log.Game.Debug("Found null player, cache out of date?");
+                    needs_cache_update = true;
                 } else if (!p.IsBot)
                 {
                     player_.Player = p;
                     player_.Update();
                 }
+            }
+            if (needs_cache_update)
+            {
+                UpdatePlayersCache();
             }
         }
         
@@ -269,20 +306,17 @@ namespace Natomic.DeadlyAccel
             // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (MyAPIGateway.Multiplayer.IsServer)
+                if (IsSP && player_cache_.Count == 0)
                 {
-                    if (tick % TICKS_PER_CACHE_UPDATE == 0)
-                    {
-                        UpdatePlayersCache();
-                    }
-                    if (tick % 10 == 0)
-                    {
-                        PlayersUpdate();
-                    }
+                    UpdatePlayersCache(); // Check every tick till we find something
+                }
+                if (tick % 10 == 0)
+                {
+                    PlayersUpdate();
                 }
             }
 
-            catch (Exception e) 
+            catch (Exception e)
             {
                 Log.Game.Error(e);
                 Log.UI.Error(e.Message);
