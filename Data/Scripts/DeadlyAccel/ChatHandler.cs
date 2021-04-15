@@ -126,7 +126,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 }
 
             });
-            if (MyAPIGateway.Multiplayer.IsServer)
+            if (MyAPIGateway.Multiplayer.IsServer || MyAPIGateway.Utilities.IsDedicated)
             {
                 net.RegisterNetworkCommand(RELOAD_CONF_CMD, OnConfigReloadServer);
                 net.RegisterNetworkCommand(SAVE_CONF_CMD, OnConfigSaveServer);
@@ -249,6 +249,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
         }
         private void SyncConfig()
         {
+            Log.Game.Debug("Pushed config settings to server");
             net_settings_.Push();
         }
         private void OnConfigEdit(string argsStr)

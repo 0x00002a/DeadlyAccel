@@ -89,13 +89,15 @@ namespace Natomic.DeadlyAccel
             if (!net_inited)
             {
                 Net.NetworkAPI.Init(ComChannelId, ModName, "/da");
+                Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), true, false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
+                Log.Game.Info("Initialised command handler");
             }
             if (MyAPIGateway.Multiplayer.IsServer)
             {
