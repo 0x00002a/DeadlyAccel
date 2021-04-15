@@ -58,7 +58,7 @@ namespace Natomic.DeadlyAccel
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
-        private readonly PlayerManager player_;
+        private PlayerManager player_;
         private readonly List<IMyPlayer> player_cache_ = new List<IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
         private Settings Settings_ => net_settings_.Value;
@@ -103,6 +103,29 @@ namespace Natomic.DeadlyAccel
             } else
             {
                 hud = new HUDManager();
+            }
+            player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
+            if (IsClient)
+            {
+
+                player_.OnApplyDamage += dmg =>
+                {
+                    if (hud == null)
+                    {
+                        Log.Game.Error("HUD is null for clientside player");
+                        return;
+                    }
+                    hud.ShowWarning();
+                };
+                player_.OnSkipDamage += () => hud?.ClearWarning();
+            }
+            else
+            {
+                player_.OnApplyDamage += dmg =>
+                            {
+                                player_.Player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+                                Log.Game.Debug($"Applied damage: {dmg} to player: {player_.Player.DisplayName}");
+                            };
             }
         }
         private Settings LoadSettings()
@@ -214,63 +237,23 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, during physics simulation and only if game is not paused.
             // NOTE in this example this won't actually be called because of the lack of MyUpdateOrder.Simulation argument in MySessionComponentDescriptor
         }
-        private PlayerManager MakePlayer(IMyPlayer p)
-        {
-            return new PlayerManager { Player = p, CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
-
-        }
-        private PlayerManager MakeCliensidePlayer(IMyPlayer p)
-        {
-            var player = MakePlayer(p);
-            player.OnApplyDamage += dmg =>
-            {
-                if (hud == null)
-                {
-                    Log.Game.Error("HUD is null for clientside player");
-                    return;
-                }
-                hud.ShowWarning();
-            };
-            player.OnSkipDamage += () => hud?.ClearWarning();
-            return player;
-        }
-        private PlayerManager MakeServerSidePlayer(IMyPlayer p)
-        {
-            var player = MakePlayer(p);
-            player.OnApplyDamage += dmg =>
-            {
-                player.Player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
-                Log.Game.Debug($"Applied damage: {dmg} to player: {player.Player.DisplayName}");
-            };
-            return player;
-        }
         private void UpdatePlayersCache()
         {
-            if (IsClient)
-            {
-                if (players_.Count == 0)
-                {
-                    players_.Add(MakeCliensidePlayer(MyAPIGateway.Session.Player));
-                }
-            }
-            else
-            {
-                player_cache_.Clear();
-                players_.Clear();
-                MyAPIGateway.Players.GetPlayers(player_cache_);
-                players_.AddRange(player_cache_.Where(p => !p.IsBot).Select(MakeServerSidePlayer));
-            }
+            player_cache_.Clear();
+            MyAPIGateway.Players.GetPlayers(player_cache_);
         }
+        
         private void PlayersUpdate()
         {
-            foreach(var p in players_)
+            foreach(var p in player_cache_)
             {
                 if (p == null)
                 {
                     Log.Game.Debug("Found null player, cache out of date?");
-                } else
+                } else if (!p.IsBot)
                 {
-                    p.Update();
+                    player_.Player = p;
+                    player_.Update();
                 }
             }
         }
