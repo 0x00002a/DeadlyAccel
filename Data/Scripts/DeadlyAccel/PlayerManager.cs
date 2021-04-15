@@ -82,7 +82,7 @@ namespace Natomic.DeadlyAccel
             {
                 var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
                 dmg *= (1 - cushionFactor);
-                OnApplyDamage(dmg);
+                OnApplyDamage?.Invoke(dmg);
 
                 return true;
             }
@@ -202,7 +202,7 @@ namespace Natomic.DeadlyAccel
                     }
 
                 }
-                OnSkipDamage();
+                OnSkipDamage?.Invoke();
 
             }
             catch (Exception e)
