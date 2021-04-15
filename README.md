@@ -70,7 +70,7 @@ loaded. Any modifications to the old config file must be copied over to the new 
 ## Bug reports
 
 Report any problems with the mod here:
-https://github.com/0x00002a/DeadlyAccel/issues/new. Please include a copy of
+https://github.com/0x00002a/DeadlyAccel/issues/new/choose. Please include a copy of
 your log files and steps to  reproduce it. You can find your log files at
 `%appdata%\SpaceEngineers\Storage\2422178213.sbm_DeadlyAccel`.
 
