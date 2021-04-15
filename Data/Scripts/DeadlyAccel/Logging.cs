@@ -45,9 +45,10 @@ namespace Natomic.Logging
         }
         class GameLog : LogSink
         {
+            public string ModName;
             public void Write(LogType t, string message)
             {
-                MyLog.Default.WriteLineAndConsole(message);
+                MyLog.Default.WriteLineAndConsole($"[{ModName}]{message}");
             }
             public void Close() { }
 
@@ -69,7 +70,7 @@ namespace Natomic.Logging
         }
         static class Util
         {
-            public static string VERSION = "1.0.1";
+            public static string VERSION = "1.0.2";
             
             public static string Prefix(LogType t)
             {
@@ -122,7 +123,7 @@ namespace Natomic.Logging
                     {
                         if (!open_)
                         {
-                            handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage($"{Name}_{DateTime.UtcNow.ToString("yyyy-mm-dd_HHmmss")}.log", typeof(Log));
+                            handle_ = MyAPIGateway.Utilities.WriteFileInLocalStorage($"{Name}_{DateTime.Now.ToString("yyyy-mm-dd_HHmmss")}.log", typeof(Log));
                             open_ = true;
                         }
                         return handle_;
@@ -133,10 +134,11 @@ namespace Natomic.Logging
                     if (handle_ == null)
                     {
                         Handle.Write($@"
-== Log for '{mod_name}' START ==
+== Log for '{mod_name}' ==
 Logger v{Util.VERSION} written by Natomic
-Start timestamp: {DateTime.Now:u}
--- Start --
+Start timestamp: {DateTime.UtcNow:u}
+All timestamps are in UTC
+-==- Start -==-
 ");
                     }
 
@@ -146,7 +148,7 @@ Start timestamp: {DateTime.Now:u}
                 {
                     if (handle_ != null)
                     {
-                        Handle.WriteLine("-- End --");
+                        Handle.WriteLine("-==- End -==-");
                     }
                 }
 
@@ -370,7 +372,7 @@ Start timestamp: {DateTime.Now:u}
 
                     
                     game_logs_.Add(new FileLog { ModName = ModName });
-                    game_logs_.Add(new GameLog());
+                    game_logs_.Add(new GameLog { ModName = ModName });
                 }
                 if (user_logs_ == null)
                 {
