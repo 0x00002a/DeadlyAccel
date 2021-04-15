@@ -163,7 +163,7 @@ namespace Natomic.DeadlyAccel
                 if (Player?.Character == null)
                 {
                     // In MP, player references can be null when joining 
-                    Log.Game.Debug("Skipped player because null, is someone joining?");
+                    //Log.Game.Debug("Skipped player because null, is someone joining?");
                     return;
                 }
 

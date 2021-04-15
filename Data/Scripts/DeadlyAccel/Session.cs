@@ -58,7 +58,7 @@ namespace Natomic.DeadlyAccel
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
-        private readonly List<PlayerManager> players_ = new List<PlayerManager>();
+        private readonly PlayerManager player_;
         private readonly List<IMyPlayer> player_cache_ = new List<IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
         private Settings Settings_ => net_settings_.Value;
