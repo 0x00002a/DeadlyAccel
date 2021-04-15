@@ -54,10 +54,10 @@ type (in chat) `/da help config` with the mod loaded.
 						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
                         Note that this property cannot be edited via in-game commands, you must edit the config file on disk directly.
 - `IgnoreJetpack`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
-- `SafeMaximum`: Acceleration greater than this value will cause the character to take damage. Damage is expontential proportioanl to how far
+- `SafeMaximum`: Acceleration greater than this value will cause the character to take damage. Damage is polynomially (x^k) proportional to how much
 					the current acceleration is over this value. The default is 5g because I found that to be the most balanced and is reasonable I think 
 					for someone in a futuristic space suit (pilots can apparently survive up to 7g "safely" with proper support but I found this too hard to reach in vanilla)
-- `DamageScaleBase`: Exponent for damage scaling. Higher values means damage will increase faster further past the safe point 
+- `DamageScaleBase`: Exponent for damage scaling (k). Higher values means damage will increase faster further past the safe point 
 - `IgnoredGridNames`: List of grid names that are ignored when checking if the pilot should take damage
 - `IgnoreRespawnShips`: Whether to ignore respawn ships when applying damage. It defaults to `true` since Vanilla drop-pods are otherwise death traps due to their parachutes
 - `VersionNumber`: Ignore this one, its for internal use by the mod
