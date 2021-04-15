@@ -56,6 +56,7 @@ namespace Natomic.DeadlyAccel
         public const string ModName = "Deadly Acceleration";
 
         private int tick = 0;
+        private bool players_need_update_ = false;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
         private PlayerManager player_;
@@ -113,12 +114,19 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), true, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), false, false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
                 Log.Game.Info("Initialised command handler");
+            }
+            if (IsClient)
+            {
+                net_settings_.Fetch();
+            } else
+            {
+                net_settings_.Push();
             }
         }
         private void InitPlayerManager()
@@ -194,7 +202,7 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
 
             if (!MyAPIGateway.Multiplayer.IsServer)
             {
-                return DefaultSettings;
+                return null;
             }
             else
             {
@@ -217,7 +225,9 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
         }
         private void OnPlayerConnect(long playerId)
         {
-            UpdatePlayersCache();
+            players_need_update_ = true;
+            
+            
         }
         public void OnPlayerDC(long playerId)
         {
@@ -306,9 +316,10 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
             // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (IsSP && player_cache_.Count == 0)
+                if (players_need_update_ || IsSP && player_cache_.Count == 0)
                 {
                     UpdatePlayersCache(); // Check every tick till we find something
+                    players_need_update_ = false;
                 }
                 if (tick % 10 == 0)
                 {
