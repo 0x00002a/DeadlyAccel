@@ -58,16 +58,16 @@ namespace Natomic.DeadlyAccel
         private int tick = 0;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
-        private readonly Random rand = new Random();
-        private readonly List<IMyPlayer> players_ = new List<IMyPlayer>();
+        private readonly List<PlayerManager> players_ = new List<PlayerManager>();
+        private readonly List<IMyPlayer> player_cache_ = new List<IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
-        private readonly Dictionary<IMyPlayer, int> iframes_lookup_ = new Dictionary<IMyPlayer, int>();
         private Settings Settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
         private HUDManager hud = null; // Only non-null if not server
 
-        private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
         private readonly ChatHandler cmd_handler_ = new ChatHandler();
+
+        bool IsClient { get { return !(MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer); } }
 
 
         public override void LoadData()
@@ -173,7 +173,7 @@ namespace Natomic.DeadlyAccel
             }
 
         }
-        private string FormatCushionLookup(string typeid, string subtypeid)
+        public static string FormatCushionLookup(string typeid, string subtypeid)
         {
             return $"{typeid}-{subtypeid}";
         }
@@ -214,201 +214,67 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, during physics simulation and only if game is not paused.
             // NOTE in this example this won't actually be called because of the lack of MyUpdateOrder.Simulation argument in MySessionComponentDescriptor
         }
+        private PlayerManager MakePlayer(IMyPlayer p)
+        {
+            return new PlayerManager { Player = p, CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
+
+        }
+        private PlayerManager MakeCliensidePlayer(IMyPlayer p)
+        {
+            var player = MakePlayer(p);
+            player.OnApplyDamage += dmg =>
+            {
+                if (hud == null)
+                {
+                    Log.Game.Error("HUD is null for clientside player");
+                    return;
+                }
+                hud.ShowWarning();
+            };
+            player.OnSkipDamage += () => hud?.ClearWarning();
+            return player;
+        }
+        private PlayerManager MakeServerSidePlayer(IMyPlayer p)
+        {
+            var player = MakePlayer(p);
+            player.OnApplyDamage += dmg =>
+            {
+                player.Player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+                Log.Game.Debug($"Applied damage: {dmg} to player: {player.Player.DisplayName}");
+            };
+            return player;
+        }
         private void UpdatePlayersCache()
         {
-            players_.Clear();
-            MyAPIGateway.Players.GetPlayers(players_);
-            players_.RemoveAll(p => p.IsBot);
-
-        }
-        private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
-        {
-            var physics = player.Character.Physics;
-            var worldPos = player.Character.GetPosition();
-            var com = player.Character.WorldAABB.Center;
-            if (parent != null)
+            if (IsClient)
             {
-                var grid = parent.CubeGrid;
-                if (grid == null)
+                if (players_.Count == 0)
                 {
-                    var fileMsg = $"Character parent was not decended from IMyCubeBlock";
-                    Log.Game.Error(fileMsg);
-                    Log.UI.Error($"{fileMsg} - This is likely a problem with your cockpit mod!");
-                }
-                else
-                {
-                    physics = grid.Physics;
-                    worldPos = grid.GetPosition();
-                    com = physics.CenterOfMassWorld;
+                    players_.Add(MakeCliensidePlayer(MyAPIGateway.Session.Player));
                 }
             }
-
-            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - com)).Length() : 0;
-
-        }
-        private float EntityAccel(IMyEntity entity)
-        {
-            var physics = entity?.Physics;
-            if (physics == null || physics.CenterOfMassWorld == null)
+            else
             {
-                throw new ArgumentException("EntityAccel passed entity with invalid physics");
-            }
-            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - physics.CenterOfMassWorld)).Length();
-
-
-
-        }
-        private bool AccelNotDueToJetpack(IMyCharacter character)
-        {
-            var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
-            return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
-        }
-        private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
-        {
-            var cushionFactor = 0f;
-
-            if (parent != null)
-            {
-                cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
-            }
-            if (accel > Settings_.SafeMaximum)
-            {
-                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
-                dmg *= (1 - cushionFactor);
-                player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
-                Log.Game.Debug($"Applied damage: {dmg} to player: {player.DisplayName}");
-
-                return true;
-            }
-            return false;
-
-        }
-        private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
-
-        private void AddRayToCache(Vector3D v1, Vector3D v2)
-        {
-            const int FILTER_LAYER = 18;
-            rays_cache_.Add(new RayTraceHelper.RayInfo() { V1 = v1, V2 = v2, FilterLayer = FILTER_LAYER });
-        }
-        private void GenerateRays(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4)
-        {
-            AddRayToCache(v1, v2);
-            AddRayToCache(v1 + v3, v2 + v3);
-            AddRayToCache(v1 + v4, v2 + v4);
-        }
-
-
-        private IMyEntity GridStandingOn(IMyCharacter character)
-        {
-            var GROUND_SEARCH = 2;
-            var pos = character.PositionComp.GetPosition();
-            var worldRef = character.PositionComp.WorldMatrixRef;
-
-            rays_cache_.Clear();
-            ray_tracer_.Hits.Clear();
-
-            var up = pos + worldRef.Up * 0.5;
-            var down = up + worldRef.Down * GROUND_SEARCH;
-            var forward = worldRef.Forward * 0.2;
-            var back = -forward;
-
-            GenerateRays(up, down, forward, back);
-
-            var hits = ray_tracer_.CastRays(rays_cache_);
-
-            var validHit = hits.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
-            if (validHit != null)
-            {
-                var entity = validHit.HitEntity.GetTopMostParent();
-
-                if (Vector3D.DistanceSquared(validHit.Position, up) < (double)GROUND_SEARCH * GROUND_SEARCH)
-                {
-                    return entity;
-                }
-
-            }
-            return null;
-        }
-        private bool GridIgnored(IMyCubeGrid grid)
-        {
-            if (grid == null)
-            {
-                return false;
-            }
-            else if (Settings_.IgnoreRespawnShips && grid.IsRespawnGrid)
-            {
-                Log.Game.Debug($"Ignored respawn ship: {grid.CustomName}");
-                return true;
-            }
-            else if (Settings_.IgnoredGridNames.Contains(grid.CustomName))
-            {
-                Log.Game.Debug($"Ignored grid: {grid.CustomName}");
-                return true;
-            } else
-            {
-                return false;
+                player_cache_.Clear();
+                players_.Clear();
+                MyAPIGateway.Players.GetPlayers(player_cache_);
+                players_.AddRange(player_cache_.Where(p => !p.IsBot).Select(MakeServerSidePlayer));
             }
         }
-
         private void PlayersUpdate()
         {
-            foreach (var player in players_)
+            foreach(var p in players_)
             {
-                if (player?.Character == null)
+                if (p == null)
                 {
-                    // In MP, player references can be null when joining 
-                    Log.Game.Debug("Skipped player because null, is someone joining?");
-                    continue;
-                }
-
-                if (!player.Character.IsDead)
+                    Log.Game.Debug("Found null player, cache out of date?");
+                } else
                 {
-
-                    const int IFRAMES = 3;
-                    if (!iframes_lookup_.ContainsKey(player))
-                    {
-                        iframes_lookup_.Add(player, 0);
-                    }
-
-                    var parentBase = player.Character.Parent;
-
-                    if ((parentBase != null || !(AccelNotDueToJetpack(player.Character) && Settings_.IgnoreJetpack)))
-                    {
-
-                        var parent = parentBase as IMyCubeBlock;
-                        if (GridIgnored(parent?.CubeGrid))
-                        {
-                            continue;
-                        }
-                        
-                        var accel = CalcCharAccel(player, parent);
-                        var gridOn = GridStandingOn(player.Character); // This is expensive!
-                        if (gridOn != null)
-                        {
-                            accel = EntityAccel(gridOn);
-                            iframes_lookup_[player] = IFRAMES;
-                        }
-                        if (iframes_lookup_[player] <= 0 || gridOn != null)
-                        {
-                            if (ApplyAccelDamage(parent, player, accel))
-                            {
-                                hud?.ShowWarning();
-                                continue;
-                            }
-                        }
-                        else if (iframes_lookup_[player] > 0)
-                        {
-                            iframes_lookup_[player]--;
-                        }
-
-                    }
-
+                    p.Update();
                 }
-
-                hud?.ClearWarning();
             }
-
         }
+        
         public override void UpdateAfterSimulation()
         {
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
