@@ -64,7 +64,7 @@ namespace Natomic.DeadlyAccel
         private readonly Dictionary<IMyPlayer, int> iframes_lookup_ = new Dictionary<IMyPlayer, int>();
         private Settings Settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
-        private readonly HUDManager hud = new HUDManager();
+        private HUDManager hud = null; // Only non-null if not server
 
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
         private readonly ChatHandler cmd_handler_ = new ChatHandler();
@@ -97,8 +97,13 @@ namespace Natomic.DeadlyAccel
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
             }
-
-            BuildCushioningCache(Settings_);
+            if (MyAPIGateway.Multiplayer.IsServer)
+            {
+                BuildCushioningCache(Settings_);
+            } else
+            {
+                hud = new HUDManager();
+            }
         }
         private Settings LoadSettings()
         {
@@ -184,7 +189,7 @@ namespace Natomic.DeadlyAccel
         public override void BeforeStart()
         {
             // executed before the world starts updating
-            hud.Init();
+            hud?.Init();
         }
 
         protected override void UnloadData()
@@ -349,6 +354,12 @@ namespace Natomic.DeadlyAccel
         {
             foreach (var player in players_)
             {
+                if (player?.Character == null)
+                {
+                    // In MP, player references can be null when joining 
+                    Log.Game.Debug("Skipped player because null, is someone joining?");
+                    continue;
+                }
 
                 if (!player.Character.IsDead)
                 {
@@ -381,7 +392,7 @@ namespace Natomic.DeadlyAccel
                         {
                             if (ApplyAccelDamage(parent, player, accel))
                             {
-                                hud.ShowWarning();
+                                hud?.ShowWarning();
                                 continue;
                             }
                         }
@@ -394,7 +405,7 @@ namespace Natomic.DeadlyAccel
 
                 }
 
-                hud.ClearWarning();
+                hud?.ClearWarning();
             }
 
         }
@@ -433,7 +444,7 @@ namespace Natomic.DeadlyAccel
             {
                 // gets called 60 times a second after all other update methods, regardless of framerate, game pause or MyUpdateOrder.
                 // NOTE: this is the only place where the camera matrix (MyAPIGateway.Session.Camera.WorldMatrix) is accurate, everywhere else it's 1 frame behind.
-                hud.Draw();
+                hud?.Draw();
             }
             catch (Exception e)
             {
