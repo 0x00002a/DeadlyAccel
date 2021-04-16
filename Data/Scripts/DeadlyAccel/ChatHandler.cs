@@ -23,6 +23,8 @@ using System.Text;
 using SENetworkAPI;
 using Natomic.Logging;
 using Sandbox.ModAPI;
+using Sandbox.Game;
+using VRageMath;
 
 namespace Natomic.DeadlyAccel
 {
@@ -73,10 +75,16 @@ Then to save it on disk (done automatically on world save, but a reload without 
         private List<string> args_cache_ = new List<string>();
         private const string RELOAD_CONF_CMD = "reloadcfg";
         private const string SAVE_CONF_CMD = "savecfg";
+
+        private void ShowDisabledMsg()
+        {
+            MyVisualScriptLogicProvider.SendChatMessageColored("Apologies, config commands are currently disabled in multiplayer due to sync issues. reload is the only avaliable command", Color.Yellow);
+        }
         public void Init(NetworkAPI net, NetSync<Settings> settings)
         {
             net.RegisterChatCommand("", OnHelp);
             net.RegisterChatCommand("help", OnHelp);
+
             net.RegisterChatCommand("config", (argsStr) =>
             {
                 try
@@ -95,13 +103,21 @@ Then to save it on disk (done automatically on world save, but a reload without 
                         case "remove":
                         case "view":
                         case "set":
-                            OnConfigEdit(argsStr);
+                            if (MyAPIGateway.Multiplayer.MultiplayerActive)
+                            {
+                                ShowDisabledMsg();
+                            }
+                            else
+                            {
+                                OnConfigEdit(argsStr);
+                            }
                             break;
                         case "reload":
                             if (!MyAPIGateway.Multiplayer.IsServer)
                             {
                                 net.SendCommand(RELOAD_CONF_CMD);
-                            } else
+                            }
+                            else
                             {
                                 OnConfigReloadServer(0, null, null, DateTime.MinValue);
                             }
@@ -110,7 +126,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
                             if (!MyAPIGateway.Multiplayer.IsServer)
                             {
                                 net.SendCommand(SAVE_CONF_CMD);
-                            } else
+                            }
+                            else
                             {
                                 OnConfigSaveServer(0, null, null, DateTime.MinValue);
                             }
@@ -121,10 +138,12 @@ Then to save it on disk (done automatically on world save, but a reload without 
                             Log.UI.Error(msg);
                             break;
                     }
-                } catch(Exception e)
+                }
+                catch (Exception e)
                 {
                     Log.Game.Error(e);
                     Log.UI.Error($"Failed to parse command: {e.Message}. This is a bug, please report it along with the contents of your log file");
+
                 }
 
             });
@@ -135,6 +154,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
             }
 
             net_settings_ = settings;
+
         }
         private void OnConfigSaveServer(ulong steamId, string cmd, byte[] data, DateTime timestamp)
         {

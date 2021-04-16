@@ -63,7 +63,7 @@ namespace Natomic.DeadlyAccel
         private PlayerManager player_;
         private readonly Dictionary<long, IMyPlayer> player_cache_ = new Dictionary<long, IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
-        private Settings Settings_ => net_settings_.Value;
+        private Settings settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
         private HUDManager hud = null; // Only non-null if not server
 
@@ -92,7 +92,7 @@ namespace Natomic.DeadlyAccel
             InitNetwork();
             if (MyAPIGateway.Multiplayer.IsServer)
             {
-                BuildCushioningCache(Settings_);
+                BuildCushioningCache(settings_);
             }
             if (IsClient || IsSP)
             {
@@ -124,7 +124,7 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), false, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), false, false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
@@ -142,7 +142,7 @@ namespace Natomic.DeadlyAccel
         }
         private void InitPlayerManager()
         {
-player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Settings_ = Settings_ };
+player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_};
             if (IsClient)
             {
 
@@ -309,7 +309,7 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
                 } else if (!p.IsBot)
                 {
                     player_.Player = p;
-                    player_.Update();
+                    player_.Update(settings_);
                 }
             }
             if (needs_cache_update)
@@ -366,7 +366,7 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
             // executed AFTER world was saved
             if (MyAPIGateway.Multiplayer.IsServer)
             {
-                Settings_.Save();
+                settings_.Save();
             }
         }
 

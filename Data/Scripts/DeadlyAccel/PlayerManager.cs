@@ -17,7 +17,6 @@ namespace Natomic.DeadlyAccel
     {
         public IMyPlayer Player;
         public Dictionary<string, float> CushioningMultipliers;
-        public Settings Settings_;
 
         public Action<double> OnApplyDamage;
         public Action OnSkipDamage;
@@ -70,7 +69,7 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-        private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
+        private double CalcAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel, Settings settings)
         {
             var cushionFactor = 0f;
 
@@ -78,15 +77,14 @@ namespace Natomic.DeadlyAccel
             {
                 CushioningMultipliers.TryGetValue(DeadlyAccelSession.FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
             }
-            if (accel > Settings_.SafeMaximum)
+            if (accel > settings.SafeMaximum)
             {
-                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
+                var dmg = Math.Pow((accel - settings.SafeMaximum), settings.DamageScaleBase);
                 dmg *= (1 - cushionFactor);
-                OnApplyDamage?.Invoke(dmg);
+                return dmg;
 
-                return true;
             }
-            return false;
+            return 0.0;
 
         }
 
@@ -134,18 +132,18 @@ namespace Natomic.DeadlyAccel
             }
             return null;
         }
-        private bool GridIgnored(IMyCubeGrid grid)
+        private bool GridIgnored(IMyCubeGrid grid, Settings settings)
         {
             if (grid == null)
             {
                 return false;
             }
-            else if (Settings_.IgnoreRespawnShips && grid.IsRespawnGrid)
+            else if (settings.IgnoreRespawnShips && grid.IsRespawnGrid)
             {
                 Log.Game.Debug($"Ignored respawn ship: {grid.CustomName}");
                 return true;
             }
-            else if (Settings_.IgnoredGridNames.Contains(grid.CustomName))
+            else if (settings.IgnoredGridNames.Contains(grid.CustomName))
             {
                 Log.Game.Debug($"Ignored grid: {grid.CustomName}");
                 return true;
@@ -156,7 +154,7 @@ namespace Natomic.DeadlyAccel
             }
         }
 
-        public void Update()
+        public void Update(Settings settings)
         {
             try
             {
@@ -172,11 +170,11 @@ namespace Natomic.DeadlyAccel
                     
                     var parentBase = Player.Character.Parent;
 
-                    if ((parentBase != null || !(AccelNotDueToJetpack(Player.Character) && Settings_.IgnoreJetpack)))
+                    if ((parentBase != null || !(AccelNotDueToJetpack(Player.Character) && settings.IgnoreJetpack)))
                     {
 
                         var parent = parentBase as IMyCubeBlock;
-                        if (GridIgnored(parent?.CubeGrid))
+                        if (GridIgnored(parent?.CubeGrid, settings))
                         {
                             return;
                         }
@@ -190,8 +188,10 @@ namespace Natomic.DeadlyAccel
                         }
                         if (iframes_ <= 0 || gridOn != null)
                         {
-                            if (ApplyAccelDamage(parent, Player, accel))
+                            var dmg = CalcAccelDamage(parent, Player, accel, settings);
+                            if (dmg > 0)
                             {
+                                OnApplyDamage?.Invoke(dmg);
                                 return;
                             }
                         }

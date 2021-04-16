@@ -26,6 +26,7 @@ using Natomic.Logging;
 
 namespace Natomic.DeadlyAccel
 {
+    [ProtoContract]
     public class Settings
     {
         [ProtoContract]
@@ -61,6 +62,8 @@ namespace Natomic.DeadlyAccel
 
         [ProtoIgnore]
         public static int CurrentVersionNumber = 2; 
+
+        [ProtoIgnore]
         public int VersionNumber = CurrentVersionNumber - 1; // Increases on breaking changes. Defaults to last version number
 
         public override string ToString()
