@@ -29,7 +29,10 @@ probably not very balanced. I suggest tuning the config to match your personal t
 
 ### Multiplayer
 
-This mod has limited multiplayer testing, but new features are tested mostly in single-player and only occasionally in multiplayer (since I play mostly single-player).
+This mod has limited multiplayer testing; new features are tested mostly in single-player and only occasionally in multiplayer (since I play mostly single-player).
+
+The current feature-set has been tested on a dedicated server but not when player hosted. Everything \*should\* work in hosted multiplayer but since I can't test it I can't be 
+sure.
 
 ### Planned features
 
@@ -47,7 +50,7 @@ they can be added to the config same as vanilla.
 ## Configuration 
 
 Configuration can be done either through in-game commands (recommended) or through the on-disk XML file. For instructions on how to edit it in-game 
-type (in chat) `/da help config` with the mod loaded.
+type (in chat) `/da help config` with the mod loaded. Note that in multiplayer only `/da config reload` is avaliable due to sync issues.
 
 - `CushioningBlocks`: List of values for cushioning factors. 
 						Final damage per tick is multiplied by the 1 - cushioning value 
@@ -104,7 +107,7 @@ Please contact the respective authors for redistribution rights for these parts 
 
 tl;dr Yes you can reupload part or all of it as long as you release all of the source including modifcations made, keep all existing license notices, and use the GPLv3
 license for any modifications. Note that "modifications" includes the entire mod it is distributed as part of, so if you want to use _any_ part of this mod you need to 
-make the whole thing GPLv3.
+make the whole thing GPLv3 (your mod that is).
 
 ### Source
 
