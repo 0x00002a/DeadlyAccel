@@ -54,6 +54,8 @@ add: Adds a config value (for list properties)
 
 remove: Removes a config value (for list properties)
 
+view: Views a config value
+
 Example (adds Respawn Planet Pod to list of ignored grids):
 /da config add IgnoredGridNames 'Respawn Planet Pod'
 
@@ -249,8 +251,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
         }
         private void SyncConfig()
         {
-            Log.Game.Debug("Pushed config settings to server");
             net_settings_.Push();
+            Log.Game.Debug("Pushed config settings to server");
         }
         private void OnConfigEdit(string argsStr)
         {

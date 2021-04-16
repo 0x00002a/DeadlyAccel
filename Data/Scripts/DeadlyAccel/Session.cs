@@ -124,12 +124,19 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), false, false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
                 Log.Game.Info("Initialised command handler");
+            }
+            if (IsClient)
+            {
+                net_settings_.Fetch();
+            } else
+            {
+                net_settings_.Push();
             }
             
         }
@@ -206,7 +213,7 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_, Se
 
             if (!MyAPIGateway.Multiplayer.IsServer)
             {
-                return null;
+                return DefaultSettings;
             }
             else
             {
