@@ -16,13 +16,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Natomic.Logging;
 using ProtoBuf;
 using Sandbox.ModAPI;
+using System;
+using System.Collections.Generic;
 using System.IO;
-using Natomic.Logging;
 
 namespace Natomic.DeadlyAccel
 {
@@ -68,7 +67,7 @@ namespace Natomic.DeadlyAccel
         public bool IgnoreRespawnShips; // Whether to ignore grids where IsRespawn == true
 
         [ProtoIgnore]
-        public static int CurrentVersionNumber = 2; 
+        public static int CurrentVersionNumber = 2;
 
         [ProtoIgnore]
         public int VersionNumber = CurrentVersionNumber - 1; // Increases on breaking changes. Defaults to last version number

@@ -16,14 +16,12 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Natomic.Logging;
+using Sandbox.Game;
+using Sandbox.ModAPI;
+using SENetworkAPI;
 using System;
 using System.Collections.Generic;
-using System.Text;
-
-using SENetworkAPI;
-using Natomic.Logging;
-using Sandbox.ModAPI;
-using Sandbox.Game;
 using VRageMath;
 
 namespace Natomic.DeadlyAccel
@@ -67,10 +65,13 @@ Then to save it on disk (done automatically on world save, but a reload without 
 ";
 
         private NetSync<Settings> net_settings_;
-        private Settings settings_ { get
+        private Settings settings_
+        {
+            get
             {
                 return net_settings_.Value;
-            } }
+            }
+        }
 
         private List<string> args_cache_ = new List<string>();
         private const string RELOAD_CONF_CMD = "reloadcfg";
@@ -173,7 +174,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
         private void PrintConfigValueList<T>(ICollection<T> values)
         {
             string res = "";
-            foreach(var val in values)
+            foreach (var val in values)
             {
                 res += val.ToString() + "\n";
             }
@@ -187,7 +188,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 field = (T)Convert.ChangeType(value, typeof(T));
                 var msg = $"Successfully set {fieldName} to {value}";
                 LogConfigValue(msg);
-            } else
+            }
+            else
             {
                 PrintConfigValue(field);
             }
@@ -197,7 +199,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
             if (!error)
             {
                 Log.Game.Info(msg);
-            } else
+            }
+            else
             {
                 Log.Game.Error(msg);
             }
@@ -210,7 +213,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
             var lowerRange = 0;
             var len = 0;
             bool openQuotes = false;
-            foreach(var ch in argsStr)
+            foreach (var ch in argsStr)
             {
                 var append = false;
                 if (ch == '\'')
@@ -240,10 +243,10 @@ Then to save it on disk (done automatically on world save, but a reload without 
             }
 
         }
-        private void ConfigListCmd<T>(string cmd, ICollection<T> field, string value, string fieldName) 
+        private void ConfigListCmd<T>(string cmd, ICollection<T> field, string value, string fieldName)
         {
             string logMsg = "";
-            switch(cmd)
+            switch (cmd)
             {
                 case "add":
                     field.Add((T)Convert.ChangeType(value, typeof(T)));
@@ -255,7 +258,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
                     {
                         field.Remove(val);
                         logMsg = $"Successfully removed {value} from {fieldName}";
-                    } else
+                    }
+                    else
                     {
                         logMsg = $"Failed to remove {value} from {fieldName}: {value} does not exist in {fieldName}";
                     }
@@ -284,7 +288,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
             var cmd = args[0];
             var value = args.Count >= 3 ? args[2] : null;
             Log.Game.Debug($"Config arg: '{args[1]}'");
-            switch(args[1])
+            switch (args[1])
             {
                 case "IgnoreJetpack":
                     ConfigValueCmd(cmd, ref settings_.IgnoreJetpack, value, "IgnoreJetpack");
@@ -313,7 +317,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
         private void OnHelp(string args)
         {
             string msg;
-            switch(args)
+            switch (args)
             {
                 case "config":
                     msg = CONF_HELP_TXT;

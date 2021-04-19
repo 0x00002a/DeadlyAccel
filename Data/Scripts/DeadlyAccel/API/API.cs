@@ -1,13 +1,12 @@
-﻿using Sandbox.ModAPI;
+﻿using ProtoBuf;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
-using System.Text;
-using ProtoBuf;
 
 namespace Natomic.DeadlyAccel.API
 {
     using ApiDict = Dictionary<string, Func<object, bool>>;
-    
+
     [ProtoContract]
     struct JuiceDefinition
     {
@@ -24,7 +23,7 @@ namespace Natomic.DeadlyAccel.API
         [ProtoMember(6)]
         public float ToxicityDecay; // Reduction of toxicity per update (when juice not used that update)
 
-       public override string ToString()
+        public override string ToString()
         {
             return $"Subtype: {SubtypeId}\nSafePointIncrease: {SafePointIncrease}\nConsumeRate: {ComsumptionRate}";
         }

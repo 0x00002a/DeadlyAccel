@@ -1,15 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VRage.Game.ModAPI;
-using Natomic.Logging;
-using VRage.Game.ModAPI;
+﻿using Natomic.Logging;
 using Sandbox.Game.Entities.Character.Components;
-using VRage.ModAPI;
-using Natomic.DeadlyAccel;
-using VRageMath;
+using System;
+using System.Collections.Generic;
 using System.Linq;
+using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
+using VRage.ModAPI;
+using VRageMath;
 
 namespace Natomic.DeadlyAccel
 {
@@ -107,12 +104,9 @@ namespace Natomic.DeadlyAccel
             if (juice_max != null)
             {
                 var juice = (JuiceItem)juice_max;
-                // var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
                 if (juice.JuiceDef.SafePointIncrease >= rem_accel)
                 {
                     // Juice stopped damage
-                    //juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
-                    //juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
                     juice.Canister.GasLevel -= juice.JuiceDef.ComsumptionRate;
                     ApplyToxicBuildup(rem_accel, juice.JuiceDef);
 
@@ -243,7 +237,7 @@ namespace Natomic.DeadlyAccel
                 if (!Player.Character.IsDead)
                 {
                     var juice = CurrJuiceItem();
-                    
+
                     var parentBase = Player.Character.Parent;
 
                     if ((parentBase != null || !(AccelNotDueToJetpack(Player.Character) && settings.IgnoreJetpack)))

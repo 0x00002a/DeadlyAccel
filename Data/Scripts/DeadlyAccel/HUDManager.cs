@@ -16,19 +16,16 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Draygo.API;
+using System.Text;
 using VRageMath;
-using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Natomic.DeadlyAccel
 {
     class HUDManager
     {
-        
-        public bool Enabled { get;  }
+
+        public bool Enabled { get; }
 
         public void Init()
         {

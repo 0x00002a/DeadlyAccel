@@ -17,9 +17,7 @@
  */
 
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
-using System.Text;
 using VRage.Game.ModAPI;
 using VRageMath;
 
@@ -41,7 +39,7 @@ namespace Natomic.DeadlyAccel
 
         public List<IHitInfo> CastRays(List<RayInfo> rays)
         {
-            foreach(var arglist in rays)
+            foreach (var arglist in rays)
             {
                 MyAPIGateway.Physics.CastRay(arglist.V1, arglist.V2, hit_cache_, arglist.FilterLayer);
                 hits_.AddRange(hit_cache_);

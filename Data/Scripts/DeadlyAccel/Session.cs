@@ -16,30 +16,18 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Natomic.Logging;
+using Natomic.Logging.Detail;
+using Sandbox.Game;
+using Sandbox.Game.Entities.Character.Components;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
-using Sandbox.Definitions;
-using Sandbox.Game;
-using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
-using VRage.ModAPI;
 using VRage.Utils;
-using Natomic.Logging;
-using Natomic.Logging.Detail;
-using Sandbox.Game.Entities.Character.Components;
-using Sandbox.Game.Entities.Character;
-
 using Net = SENetworkAPI;
-using VRage.Input;
-using VRageMath;
-using System.Linq;
-using VRage.Game.ModAPI.Interfaces;
-using VRage.Collections;
-using Sandbox.Game.EntityComponents;
-using VRage;
 
 namespace Natomic.DeadlyAccel
 {
@@ -180,12 +168,13 @@ namespace Natomic.DeadlyAccel
             if (IsClient)
             {
                 net_settings_.Fetch();
-            } else
+            }
+            else
             {
                 net_settings_.Push();
             }
             InitAPI();
-            
+
         }
         private void InitPlayerManager()
         {
@@ -344,7 +333,7 @@ namespace Natomic.DeadlyAccel
                 return false;
             });
         }
-        
+
         private bool AccelNotDueToJetpack(IMyCharacter character)
         {
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
@@ -355,13 +344,14 @@ namespace Natomic.DeadlyAccel
         private void PlayersUpdate()
         {
             bool needs_cache_update = false;
-            foreach(var p in player_cache_.Values)
+            foreach (var p in player_cache_.Values)
             {
                 if (p == null)
                 {
                     Log.Game.Debug("Found null player, cache out of date?");
                     needs_cache_update = true;
-                } else if (!p.IsBot)
+                }
+                else if (!p.IsBot)
                 {
                     player_.Player = p;
                     player_.Update(settings_);
@@ -372,7 +362,7 @@ namespace Natomic.DeadlyAccel
                 UpdatePlayersCache();
             }
         }
-        
+
         public override void UpdateAfterSimulation()
         {
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.

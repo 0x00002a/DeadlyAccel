@@ -16,6 +16,7 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+using Natomic.Logging.Detail;
 using Sandbox.Game;
 using Sandbox.ModAPI;
 using System;
@@ -25,8 +26,6 @@ using System.Text;
 using VRage.Game.Components;
 using VRage.Utils;
 using VRageMath;
-
-using Natomic.Logging.Detail;
 namespace Natomic.Logging
 {
     namespace Detail
@@ -68,7 +67,7 @@ namespace Natomic.Logging
             public void Close() { }
 
         }
-        class LogFilter: LogSink
+        class LogFilter : LogSink
         {
             public LogType MaxLogLevel;
             public LogSink Sink;
@@ -89,7 +88,7 @@ namespace Natomic.Logging
         static class Util
         {
             public static string VERSION = "1.0.2";
-            
+
             public static string Prefix(LogType t)
             {
                 switch (t)
@@ -261,12 +260,12 @@ All timestamps are in UTC
 
             public void Close()
             {
-                for(var n = 0; n != writers_.Count; ++n)
+                for (var n = 0; n != writers_.Count; ++n)
                 {
                     writers_[n].Close();
                     writers_[n] = null;
                 }
-                
+
                 writers_.Clear();
                 writers_ = null;
                 initialised_ = false;
@@ -369,11 +368,11 @@ All timestamps are in UTC
     /// </summary>
 
     [MySessionComponentDescriptor(MyUpdateOrder.NoUpdate, priority: int.MaxValue)]
-    class Log: MySessionComponentBase
+    class Log : MySessionComponentBase
     {
         private static Log instance_;
 
-        public static Logger Game { get {  return instance_?.game_logs_; } }
+        public static Logger Game { get { return instance_?.game_logs_; } }
         public static Logger UI { get { return instance_?.user_logs_; } }
 
         private Logger game_logs_ = null;
@@ -418,20 +417,21 @@ All timestamps are in UTC
                     user_logs_ = new Logger();
                     user_logs_.Init(this);
                 }
-             } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Util.MetaLogErr(ModName, "Failed to init loggers: " + Util.FmtErr(e));
             }
-            
+
         }
         protected override void UnloadData()
         {
             game_logs_.Close();
             user_logs_.Close();
-            instance_ = null; 
+            instance_ = null;
         }
-        
-       
-       
+
+
+
     }
 }

@@ -1,20 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using VRage.Game.ModAPI;
-using System.Linq;
-
-using MyInventoryItem = VRage.Game.ModAPI.Ingame.MyInventoryItem;
-using IMyInventory = VRage.Game.ModAPI.IMyInventory;
+﻿using Sandbox.Common.ObjectBuilders.Definitions;
 using Sandbox.Game;
-using VRage;
-using Sandbox.ModAPI;
-using Sandbox.Game.EntityComponents;
-using Sandbox.Game.Entities;
-
-using Sandbox.Definitions;
-using Natomic.Logging;
-using Sandbox.Common.ObjectBuilders.Definitions;
+using System.Collections.Generic;
+using VRage.Game.ModAPI;
+using IMyInventory = VRage.Game.ModAPI.IMyInventory;
+using MyInventoryItem = VRage.Game.ModAPI.Ingame.MyInventoryItem;
 
 namespace Natomic.DeadlyAccel
 {
@@ -37,7 +26,7 @@ namespace Natomic.DeadlyAccel
         {
             items_.Add(def.SubtypeId, def);
         }
-       public JuiceItem? MaxLevelJuiceInInv(IMyInventory inv)
+        public JuiceItem? MaxLevelJuiceInInv(IMyInventory inv)
         {
             inventory_cache_.Clear();
             var items = ((MyInventory)inv).GetItems(); // If this cast is not safe then then universe has imploded
@@ -62,6 +51,6 @@ namespace Natomic.DeadlyAccel
             }
             return curr_max;
 
-        }       
+        }
     }
 }
