@@ -28,6 +28,7 @@ using VRage.Game.ModAPI;
 using VRage.ModAPI;
 using VRage.Utils;
 using Natomic.Logging;
+using Natomic.Logging.Detail;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.Game.Entities.Character;
 
@@ -68,9 +69,10 @@ namespace Natomic.DeadlyAccel
         private Settings settings_ => net_settings_.Value;
         private Net.NetSync<Settings> net_settings_;
         private HUDManager hud = null; // Only non-null if not server
+        private readonly ChatHandler cmd_handler_ = new ChatHandler();
 
-        private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
-        private JuiceTracker juice_manager_;
+        bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
+        bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
 
         private bool RegisterJuice(object obj)
         {
@@ -79,16 +81,26 @@ namespace Natomic.DeadlyAccel
                 var msg = obj as byte[];
                 if (msg == null)
                 {
-                    Log.Error("Failed to register juice definition, object was not sent as bytes");
+                    Log.Game.Error("Failed to register juice definition, object was not sent as bytes");
                     return false;
                 }
                 var def = MyAPIGateway.Utilities.SerializeFromBinary<API.JuiceDefinition>(msg);
-                juice_manager_.AddJuiceDefinition(def);
-                Log.Info($"Added juice definition: {def}");
+                player_?.JuiceManager?.AddJuiceDefinition(def);
+                if (player_?.JuiceManager == null)
+                {
+                    Log.Game.Error("Failed to register juice definition, came in before fully initialised");
+                    return false;
+                }
+                else
+                {
+                    Log.Game.Info($"Added juice definition: {def}");
+                }
                 return true;
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
-                Log.Error($"Failed to add juice definition: {e.Message}\n-- Stack Trace --\n{e.StackTrace}", "Failed to add a juice definition");
+                Log.Game.Error($"Failed to add juice definition: {e.Message}\n-- Stack Trace --\n{e.StackTrace}");
+                Log.UI.Error("Failed to add a juice definition");
                 return false;
             }
         }
@@ -135,19 +147,19 @@ namespace Natomic.DeadlyAccel
             MyVisualScriptLogicProvider.PlayerConnected += OnPlayerConnect;
             MyVisualScriptLogicProvider.PlayerDisconnected += OnPlayerDC;
 
+        }
+        private void InitAPI()
+        {
+
             if (MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer)
             {
-                ServerSideInit();
-            }
-
-            var apiHooks = new Dictionary<string, Func<object, bool>>()
+                var apiHooks = new Dictionary<string, Func<object, bool>>()
             {
                 {"RegisterJuice", RegisterJuice}
             };
 
-            MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
-
-            BuildCushioningCache(Settings_);
+                MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
+            }
         }
         private void InitNetwork()
         {
@@ -172,6 +184,7 @@ namespace Natomic.DeadlyAccel
             {
                 net_settings_.Push();
             }
+            InitAPI();
             
         }
         private void InitPlayerManager()
@@ -325,146 +338,20 @@ player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_};
         }
         private void UpdatePlayersCache()
         {
-            players_.Clear();
-            MyAPIGateway.Players.GetPlayers(players_);
-            players_.RemoveAll(p => p.IsBot);
-
-        }
-        private bool PlayerHasJuice(IMyCharacter character)
-        {
-            return character.GetInventory().ContainItems(1, VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("NI_JuiceLvl_1"));
-        }
-        private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
-        {
-            var physics = player.Character.Physics;
-            var worldPos = player.Character.GetPosition();
-            var com = player.Character.WorldAABB.Center;
-            if (parent != null)
+            MyAPIGateway.Multiplayer.Players.GetPlayers(null, p =>
             {
-                var grid = parent.CubeGrid;
-                if (grid == null)
-                {
-                    var fileMsg = $"Character parent was not decended from IMyCubeBlock";
-                    Log.Error(fileMsg, $"{fileMsg} - This is likely a problem with your cockpit mod!");
-                }
-                else
-                {
-                    physics = grid.Physics;
-                    worldPos = grid.GetPosition();
-                    com = physics.CenterOfMassWorld;
-                }
-            }
-
-            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - com)).Length() : 0;
-
+                player_cache_[p.IdentityId] = p;
+                return false;
+            });
         }
-        private float EntityAccel(IMyEntity entity)
-        {
-            var physics = entity?.Physics;
-            if (physics == null || physics.CenterOfMassWorld == null)
-            {
-                throw new ArgumentException("EntityAccel passed entity with invalid physics");
-            }
-            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - physics.CenterOfMassWorld)).Length();
-
-
-
-        }
+        
         private bool AccelNotDueToJetpack(IMyCharacter character)
         {
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
 
-        private bool ApplyAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel)
-        {
-            var cushionFactor = 0f;
 
-            var parentGrid = parent == null ? null : (MyCubeGrid)parent?.CubeGrid;
-            if (parentGrid != null)
-            {
-            }
-
-            if (parent != null)
-            {
-                cushioning_mulipliers_.TryGetValue(FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
-            }
-
-            if (accel > Settings_.SafeMaximum)
-            {
-
-                var inv = parent?.GetInventory();
-                var juice_max = parentGrid != null ? juice_manager_.MaxLevelJuiceInInv(inv) : null;
-                if (juice_max != null)
-                {
-                    var juice = (JuiceItem)juice_max;
-                   // var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
-                    if (Settings_.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
-                    {
-                        // Juice stopped damage
-                        //juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
-                        //juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
-                        juice.Canister.GasLevel -= juice.JuiceDef.ComsumptionRate;
-                        return false;
-                    }
-                }
-                var dmg = Math.Pow((accel - Settings_.SafeMaximum), Settings_.DamageScaleBase);
-                //dmg *= 10; // Scale it up since only run every 10 ticks
-                dmg *= (1 - cushionFactor);
-                player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
-
-                return true;
-            }
-            return false;
-
-        }
-        private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
-
-        private void AddRayToCache(Vector3D v1, Vector3D v2)
-        {
-            const int FILTER_LAYER = 18;
-            rays_cache_.Add(new RayTraceHelper.RayInfo() { V1 = v1, V2 = v2, FilterLayer = FILTER_LAYER });
-        }
-        private void GenerateRays(Vector3D v1, Vector3D v2, Vector3D v3, Vector3D v4)
-        {
-            AddRayToCache(v1, v2);
-            AddRayToCache(v1 + v3, v2 + v3);
-            AddRayToCache(v1 + v4, v2 + v4);
-        }
-
-
-        private IMyEntity GridStandingOn(IMyCharacter character)
-        {
-            var GROUND_SEARCH = 2;
-            var pos = character.PositionComp.GetPosition();
-            var worldRef = character.PositionComp.WorldMatrixRef;
-
-            rays_cache_.Clear();
-            ray_tracer_.Hits.Clear();
-
-            var up = pos + worldRef.Up * 0.5;
-            var down = up + worldRef.Down * GROUND_SEARCH;
-            var forward = worldRef.Forward * 0.2;
-            var back = -forward;
-
-            GenerateRays(up, down, forward, back);
-
-            var hits = ray_tracer_.CastRays(rays_cache_);
-
-            var validHit = hits.FirstOrDefault(h => h != null && h.HitEntity != null && h.HitEntity != ((IMyCameraController)character).Entity.Components);
-            if (validHit != null)
-            {
-                var entity = validHit.HitEntity.GetTopMostParent();
-
-                if (Vector3D.DistanceSquared(validHit.Position, up) < (double)GROUND_SEARCH * GROUND_SEARCH)
-                {
-                    return entity;
-                }
-
-            }
-            return null;
-        }
-        
         private void PlayersUpdate()
         {
             bool needs_cache_update = false;

@@ -24,6 +24,7 @@ namespace Natomic.DeadlyAccel
         private int iframes_ = 0;
         private const int IFRAME_MAX = 3;
 
+        public JuiceTracker JuiceManager;
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
 
@@ -69,6 +70,26 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
+        private double JuiceDmgReductionCoefficent(float accel, IMyCubeBlock parent, Settings settings)
+        {
+            var inv = parent?.GetInventory();
+            var parentGrid = parent?.CubeGrid;
+                var juice_max = parentGrid != null ? JuiceManager.MaxLevelJuiceInInv(inv) : null;
+            if (juice_max != null)
+            {
+                var juice = (JuiceItem)juice_max;
+                // var juice_left = juice_manager_.QtyLeftInInv(inv, juice) >= juice.JuiceDef.ComsumptionRate;
+                if (settings.SafeMaximum + juice.JuiceDef.SafePointIncrease >= accel)
+                {
+                    // Juice stopped damage
+                    //juice.Tank.Components.Get<MyResourceSourceComponent>().SetOutput(juice.JuiceDef.ComsumptionRate);
+                    //juice_manager_.RemoveJuice(inv, juice, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
+                    juice.Canister.GasLevel -= juice.JuiceDef.ComsumptionRate;
+                    return 0.0;
+                }
+            }
+            return 1.0;
+        }
         private double CalcAccelDamage(IMyCubeBlock parent, IMyPlayer player, float accel, Settings settings)
         {
             var cushionFactor = 0f;
@@ -81,6 +102,7 @@ namespace Natomic.DeadlyAccel
             {
                 var dmg = Math.Pow((accel - settings.SafeMaximum), settings.DamageScaleBase);
                 dmg *= (1 - cushionFactor);
+                dmg *= JuiceDmgReductionCoefficent(accel, parent, settings);
                 return dmg;
 
             }
@@ -152,6 +174,10 @@ namespace Natomic.DeadlyAccel
             {
                 return false;
             }
+        }
+        private bool PlayerHasJuice(IMyCharacter character)
+        {
+            return character.GetInventory().ContainItems(1, VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("NI_JuiceLvl_1"));
         }
 
         public void Update(Settings settings)
