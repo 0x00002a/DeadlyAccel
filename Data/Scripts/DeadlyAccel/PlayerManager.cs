@@ -3,6 +3,7 @@ using Sandbox.Game.Entities.Character.Components;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using VRage;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
 using VRage.ModAPI;
@@ -80,8 +81,8 @@ namespace Natomic.DeadlyAccel
         }
         private void ApplyToxicBuildup(float accel, API.JuiceDefinition def)
         {
-            toxicity_buildups_[Player] += def.ToxicityBase * def.ToxicityCoefficent * accel;
-
+            var toxicity = CurrToxicBuildup(); // Have to create it first
+            toxicity_buildups_[Player] = toxicity + def.ToxicityBase * def.ToxicityCoefficent * accel;
         }
         private JuiceItem? CurrJuiceItem()
         {
@@ -107,7 +108,9 @@ namespace Natomic.DeadlyAccel
                 if (juice.JuiceDef.SafePointIncrease >= rem_accel)
                 {
                     // Juice stopped damage
-                    juice.Canister.GasLevel -= juice.JuiceDef.ComsumptionRate;
+
+                    //juice.Canister.Amount -= (MyFixedPoint)juice.JuiceDef.ComsumptionRate;
+                    juice.Inv.RemoveItems(juice.Canister.ItemId, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
                     ApplyToxicBuildup(rem_accel, juice.JuiceDef);
 
                     return 0.0;
