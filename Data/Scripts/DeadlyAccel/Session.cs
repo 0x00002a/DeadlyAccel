@@ -63,7 +63,7 @@ namespace Natomic.DeadlyAccel
         private bool players_need_update_ = false;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
-        private PlayerManager player_;
+        private readonly PlayerManager player_ = new PlayerManager();
         private readonly Dictionary<long, IMyPlayer> player_cache_ = new Dictionary<long, IMyPlayer>();
         private readonly Dictionary<string, float> cushioning_mulipliers_ = new Dictionary<string, float>();
         private Settings settings_ => net_settings_.Value;
@@ -189,7 +189,7 @@ namespace Natomic.DeadlyAccel
         }
         private void InitPlayerManager()
         {
-player_ = new PlayerManager { CushioningMultipliers = cushioning_mulipliers_};
+            player_.CushioningMultipliers = cushioning_mulipliers_;
             if (IsClient)
             {
 

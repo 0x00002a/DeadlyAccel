@@ -12,8 +12,8 @@ using Sandbox.ModAPI;
 using Sandbox.Game.EntityComponents;
 using Sandbox.Game.Entities;
 
-using Digi;
 using Sandbox.Definitions;
+using Natomic.Logging;
 using Sandbox.Common.ObjectBuilders.Definitions;
 
 namespace Natomic.DeadlyAccel

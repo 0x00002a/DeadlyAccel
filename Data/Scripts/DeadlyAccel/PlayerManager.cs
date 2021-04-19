@@ -24,7 +24,7 @@ namespace Natomic.DeadlyAccel
         private int iframes_ = 0;
         private const int IFRAME_MAX = 3;
 
-        public JuiceTracker JuiceManager;
+        public readonly JuiceTracker JuiceManager = new JuiceTracker();
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
 
