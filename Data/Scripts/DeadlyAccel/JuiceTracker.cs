@@ -18,18 +18,16 @@ using Sandbox.Common.ObjectBuilders.Definitions;
 
 namespace Natomic.DeadlyAccel
 {
-    struct JuiceItem: IComparable<JuiceItem>
+    struct JuiceItem
     {
         public API.JuiceDefinition JuiceDef;
         public MyObjectBuilder_GasContainerObject Canister;
 
-        public int CompareTo(JuiceItem other)
-        {
-            return JuiceDef.SafePointIncrease.CompareTo(other.JuiceDef.SafePointIncrease);
-        }
     }
     class JuiceTracker
     {
+        public const string CANISTER_TYPE_ID = "MyObjectBuilder_OxygenContainerDefinition";
+
         private readonly Dictionary<string, API.JuiceDefinition> items_ = new Dictionary<string, API.JuiceDefinition>(); // Lookup table for subtypeid against juice level
         private readonly List<MyInventoryItem> inventory_cache_ = new List<MyInventoryItem>();
         private readonly List<IMySlimBlock> blocks_cache_ = new List<IMySlimBlock>();
@@ -44,12 +42,26 @@ namespace Natomic.DeadlyAccel
             inventory_cache_.Clear();
             var items = ((MyInventory)inv).GetItems(); // If this cast is not safe then then universe has imploded
 
-            return items
-                .Where(i => i.Content.TypeId.ToString() == "MyObjectBuilder_OxygenContainerDefinition" && items_.ContainsKey(i.Content.SubtypeId.ToString()))
-                .Select(i => new JuiceItem { JuiceDef = items_[i.Content.SubtypeId.ToString()], Canister = i.Content as MyObjectBuilder_GasContainerObject })
-                .Where(item => item.Canister.GasLevel >= item.JuiceDef.ComsumptionRate)
-                .Select(i => (JuiceItem?)i)
-                .Max();
+            JuiceItem? curr_max = null;
+            foreach (var item in items)
+            {
+                var stype_id = item.Content.SubtypeId.ToString();
+                if (item.Content.TypeId.ToString() == CANISTER_TYPE_ID && items_.ContainsKey(stype_id))
+                {
+                    var canister = (MyObjectBuilder_GasContainerObject)item.Content;
+                    var juice_def = items_[stype_id];
+                    if (canister.GasLevel >= juice_def.ComsumptionRate)
+                    {
+                        // There is gas enough gas in the canister for at least 1 more use
+                        if (curr_max == null || curr_max?.JuiceDef.ComsumptionRate < juice_def.ComsumptionRate)
+                        {
+                            curr_max = new JuiceItem { JuiceDef = juice_def, Canister = canister };
+                        }
+                    }
+                }
+            }
+            return curr_max;
+
         }       
     }
 }

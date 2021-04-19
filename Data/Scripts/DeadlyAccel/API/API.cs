@@ -17,6 +17,12 @@ namespace Natomic.DeadlyAccel.API
         public float SafePointIncrease;
         [ProtoMember(3)]
         public float ComsumptionRate;
+        [ProtoMember(4)]
+        public float ToxicityBase;
+        [ProtoMember(5)]
+        public float ToxicityCoefficent; // Toxicity per update = ToxicityBase * ToxicityCoefficent * (default safe point - accel)
+        [ProtoMember(6)]
+        public float ToxicityDecay; // Reduction of toxicity per update (when juice not used that update)
 
        public override string ToString()
         {
