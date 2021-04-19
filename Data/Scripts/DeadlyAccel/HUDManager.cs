@@ -18,14 +18,54 @@
 
 using Draygo.API;
 using System.Text;
+using VRage.Utils;
 using VRageMath;
+using Natomic.Logging;
 
 namespace Natomic.DeadlyAccel
 {
+    class ProgressBar
+    {
+        private int progress_;
+        private Vector2D location_;
+        private int max_width_;
+
+        public int Progress { set { widget_.Visible = value != 0; progress_ = value; } get { return progress_; } }
+        public const int MAX_PROGRESS = 100;
+
+        public ProgressBar(Vector2D location, int max_w)
+        {
+            location_ = location;
+            max_width_ = max_w;
+        }
+
+        public void Init()
+        {
+            if (widget_ == null)
+            {
+                widget_ = new HudAPIv2.BillBoardHUDMessage(
+                    Material: MyStringId.GetOrCompute("Square"),
+                    Origin: location_,
+                    BillBoardColor: Color.Red,
+                    Height: 0.1f
+                    );
+            }
+
+        }
+
+        public void Draw()
+        {
+            widget_.Width = progress_ == 0 ? 0 : (float)progress_ / MAX_PROGRESS;
+        }
+
+        private HudAPIv2.BillBoardHUDMessage widget_;
+    }
+
     class HUDManager
     {
 
         public bool Enabled { get; }
+        public double ToxicityLevels;
 
         public void Init()
         {
@@ -35,6 +75,8 @@ namespace Natomic.DeadlyAccel
         {
             message_ = new HudAPIv2.HUDMessage(text_, txt_origin_, null, -1, 1.5);
             message_.InitialColor = Color.Red;
+
+            toxicity_levels_.Init();
         }
         public void ShowWarning()
         {
@@ -54,10 +96,15 @@ namespace Natomic.DeadlyAccel
             if (message_ != null)
             {
                 message_.Visible = text_.Length > 0;
+
+                toxicity_levels_.Progress = 50;//(int)ToxicityLevels;
+                toxicity_levels_.Draw();
             }
+            
         }
 
         private HudAPIv2.HUDMessage message_;
+        private ProgressBar toxicity_levels_ = new ProgressBar(new Vector2D(-0.8, -0.7), 4);
         private HudAPIv2 api_handle_;
         private Vector2D txt_origin_ = new Vector2D(-0.3, 0.5); // Top center
         private StringBuilder text_ = new StringBuilder("");

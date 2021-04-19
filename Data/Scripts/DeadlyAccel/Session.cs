@@ -333,14 +333,6 @@ namespace Natomic.DeadlyAccel
                 return false;
             });
         }
-
-        private bool AccelNotDueToJetpack(IMyCharacter character)
-        {
-            var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
-            return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
-        }
-
-
         private void PlayersUpdate()
         {
             bool needs_cache_update = false;
@@ -355,6 +347,10 @@ namespace Natomic.DeadlyAccel
                 {
                     player_.Player = p;
                     player_.Update(settings_);
+                    if (hud != null)
+                    {
+                        hud.ToxicityLevels = player_.CurrToxicBuildup();
+                    }
                 }
             }
             if (needs_cache_update)

@@ -28,6 +28,7 @@ namespace Natomic.DeadlyAccel
         private readonly Dictionary<IMyPlayer, double> toxicity_buildups_ = new Dictionary<IMyPlayer, double>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
 
+
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
             var physics = player.Character.Physics;
@@ -70,7 +71,7 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-        private double CurrToxicBuildup()
+        public double CurrToxicBuildup()
         {
             double toxic_lvl;
             if (!toxicity_buildups_.TryGetValue(Player, out toxic_lvl))
