@@ -39,11 +39,18 @@ namespace Natomic.DeadlyAccel
             [ProtoMember(3)]
             public float CushionFactor;
         }
-
+        [ProtoContract]
+        public struct JuiceValue
+        {
+            [ProtoMember(1)]
+            public string SubtypeId;
+            [ProtoMember(2)]
+            public float SafePointIncrease;
+        }
         private const string Filename = "DeadlyAccel.cfg";
 
         [ProtoMember(1)]
-        public List<CusheningEntry> CushioningBlocks = new List<CusheningEntry>();
+        public List<CusheningEntry> CushioningBlocks;
 
         [ProtoMember(2)]
         public bool IgnoreJetpack; // Whether acceleration due to jetpacks should be ignored 
