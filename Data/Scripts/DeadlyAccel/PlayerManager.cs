@@ -21,7 +21,7 @@ namespace Natomic.DeadlyAccel
         public Action<double> OnApplyDamage;
         public Action OnSkipDamage;
 
-        private int iframes_ = 0; // Todo: Fix this, it won't work for MP
+        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>(); // Todo: Fix this, it won't work for MP
         private const int IFRAME_MAX = 3;
         private const double TOXICITY_CUTOFF = 100.0;
 
@@ -219,6 +219,15 @@ namespace Natomic.DeadlyAccel
         {
             return character.GetInventory().ContainItems(1, VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("NI_JuiceLvl_1"));
         }
+        private int CurrIFrames()
+        {
+            int frames;
+            if (!iframes_.TryGetValue(Player, out frames))
+            {
+                frames = 0;
+            }
+            return frames;
+        }
 
         public void Update(Settings settings)
         {
@@ -248,12 +257,13 @@ namespace Natomic.DeadlyAccel
 
                         var accel = CalcCharAccel(Player, parent);
                         var gridOn = GridStandingOn(Player.Character); // This is expensive!
+                        var curr_frames = CurrIFrames();
                         if (gridOn != null)
                         {
                             accel = EntityAccel(gridOn);
-                            iframes_ = IFRAME_MAX;
+                            curr_frames = IFRAME_MAX;
                         }
-                        if (iframes_ <= 0 || gridOn != null)
+                        if (curr_frames <= 0 || gridOn != null)
                         {
                             var dmg = CalcAccelDamage(parent, juice, accel, settings);
                             if (dmg > 0)
@@ -262,10 +272,11 @@ namespace Natomic.DeadlyAccel
                                 return;
                             }
                         }
-                        else if (iframes_ > 0)
+                        else if (curr_frames > 0)
                         {
-                            iframes_--;
+                            curr_frames--;
                         }
+                        iframes_[Player] = curr_frames;
                     }
                     if (juice != null)
                     {
