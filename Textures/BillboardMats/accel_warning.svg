@@ -73,7 +73,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -104,7 +104,7 @@
        style="stroke-width:0.484789;stroke-miterlimit:4;stroke-dasharray:none">
       <text
          xml:space="preserve"
-         style="font-size:46.9584px;line-height:1.25;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567"
+         style="font-size:42.393px;line-height:1.25;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567"
          x="33.48774"
          y="53.916557"
          id="text2001"
@@ -113,7 +113,7 @@
            id="tspan1999"
            x="33.48774"
            y="53.916557"
-           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:46.9584px;font-family:Symbol;-inkscape-font-specification:Symbol;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567">!</tspan></text>
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:42.393px;font-family:Impact;-inkscape-font-specification:Impact;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567">!</tspan></text>
     </g>
   </g>
 </svg>
