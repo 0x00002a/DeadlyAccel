@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="256"
+   height="256"
+   viewBox="0 0 67.733333 67.733333"
+   version="1.1"
+   id="svg1414"
+   sodipodi:docname="accel_warning.svg"
+   inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
+   inkscape:export-filename="C:\Users\Nat\AppData\Roaming\SpaceEngineers\Mods\DeadlyAccel\Textures\BillboardMats\accel_warning.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
+  <defs
+     id="defs1408">
+    <linearGradient
+       inkscape:collect="always"
+       id="linearGradient1995">
+      <stop
+         style="stop-color:#ff4d75;stop-opacity:1"
+         offset="0"
+         id="stop1991" />
+      <stop
+         style="stop-color:#ff0600;stop-opacity:0.96309966"
+         offset="1"
+         id="stop1993" />
+    </linearGradient>
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient1995"
+       id="radialGradient1997"
+       cx="32.014721"
+       cy="75.205399"
+       fx="32.014721"
+       fy="75.205399"
+       r="31.886874"
+       gradientTransform="matrix(-0.020097,-1.4043996,2.4193916,-0.03462162,-147.36467,90.99649)"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="1.979899"
+     inkscape:cx="124.55418"
+     inkscape:cy="128.66486"
+     inkscape:document-units="mm"
+     inkscape:current-layer="layer1"
+     inkscape:document-rotation="0"
+     showgrid="false"
+     units="px"
+     width="256px"
+     inkscape:window-width="1920"
+     inkscape:window-height="1017"
+     inkscape:window-x="1272"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1" />
+  <metadata
+     id="metadata1411">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       sodipodi:type="star"
+       style="fill:url(#radialGradient1997);fill-opacity:1;stroke:#f60000;stroke-width:1.13612;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:3.59887;stroke-opacity:1"
+       id="path1981"
+       sodipodi:sides="3"
+       sodipodi:cx="33.808136"
+       sodipodi:cy="41.039215"
+       sodipodi:r1="35.979408"
+       sodipodi:r2="17.989704"
+       sodipodi:arg1="-1.5742327"
+       sodipodi:arg2="-0.52703519"
+       inkscape:flatsided="true"
+       inkscape:rounded="0"
+       inkscape:randomized="0"
+       d="M 33.684498,5.0600193 65.028853,58.921739 2.7110576,59.135887 Z"
+       inkscape:transform-center-x="-0.053931112"
+       inkscape:transform-center-y="-6.1609541" />
+    <g
+       id="g1989"
+       transform="matrix(1.1374717,0,0,1.0288674,-2.3553812,-3.6433903)"
+       style="stroke-width:0.484789;stroke-miterlimit:4;stroke-dasharray:none">
+      <text
+         xml:space="preserve"
+         style="font-size:46.9584px;line-height:1.25;font-family:sans-serif;text-align:center;text-anchor:middle;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567"
+         x="33.48774"
+         y="53.916557"
+         id="text2001"
+         transform="scale(0.95106324,1.0514548)"><tspan
+           sodipodi:role="line"
+           id="tspan1999"
+           x="33.48774"
+           y="53.916557"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:46.9584px;font-family:Symbol;-inkscape-font-specification:Symbol;fill:#fff700;fill-opacity:0.870849;stroke-width:0.118567">!</tspan></text>
+    </g>
+  </g>
+</svg>

@@ -21,9 +21,72 @@ using System.Text;
 using VRage.Utils;
 using VRageMath;
 using Natomic.Logging;
+using System;
 
 namespace Natomic.DeadlyAccel
 {
+    static class CoordHelper
+    {
+        static Vector2D KEEN_ORIGIN = new Vector2D(-1, 1); // I wish I was joking
+
+        /// <summary>
+        /// Translates a keen -1, 1 -> 1, -1 based coordinate into a 0, 0 -> 1, 1 coordinate that can actually be reasoned about
+        /// </summary>
+        /// <param name="insane"></param>
+        /// <returns></returns>
+        public static Vector2D KeenCoordToSaneCoord(Vector2D insane)
+        {
+            var translation = new Vector2D(MathHelperD.Distance(insane.X, KEEN_ORIGIN.X), MathHelperD.Distance(insane.Y, KEEN_ORIGIN.Y));
+            return translation / 2;
+        }
+        public static Vector2D SaneCoordToKeenCoord(Vector2D sane)
+        {
+            return Vector2D.Zero;
+        }
+    }
+    class TextLabel { 
+        public bool Visible { set { widget_.Visible = value; } get { return widget_.Visible; } }
+        public double Scale { set { widget_.Scale = value; } get { return widget_.Scale; } }
+        public Color InitialColor { set { widget_.InitialColor = value; } get { return widget_.InitialColor; } }
+
+        public TextLabel(Vector2D location)
+        {
+            location_ = location;
+        }
+
+        public void Append(string txt)
+        {
+            widget_.Message.Append(txt);
+            RecalcPos();
+        }
+        public void Clear()
+        {
+            widget_.Message.Clear();
+            RecalcPos();
+        }
+        private void RecalcPos()
+        {
+            var size = widget_.GetTextLength();
+            var center = size / 2;
+
+            widget_.Origin = location_ - center;
+        }
+        public void Init()
+        {
+            if (widget_ == null)
+            {
+                widget_ = new HudAPIv2.HUDMessage(new StringBuilder(), Origin: location_);
+            }
+        }
+
+        public void Draw()
+        {
+        }
+
+        private Vector2D location_;
+        private HudAPIv2.HUDMessage widget_;
+
+    }
     class ProgressBar
     {
         private int progress_;
@@ -47,7 +110,7 @@ namespace Natomic.DeadlyAccel
                     Material: MyStringId.GetOrCompute("Square"),
                     Origin: location_,
                     BillBoardColor: Color.Red,
-                    Height: 0.1f
+                    Height: 0.05f
                     );
             }
 
@@ -66,6 +129,7 @@ namespace Natomic.DeadlyAccel
 
         public bool Enabled { get; }
         public double ToxicityLevels;
+        public MyStringId ACCEL_WARNING_MAT = MyStringId.GetOrCompute("NI_DeadlyAccel_AccelWarning");
 
         public void Init()
         {
@@ -73,41 +137,51 @@ namespace Natomic.DeadlyAccel
         }
         private void OnHudInit()
         {
-            message_ = new HudAPIv2.HUDMessage(text_, txt_origin_, null, -1, 1.5);
-            message_.InitialColor = Color.Red;
+            accel_warn_ = new HudAPIv2.BillBoardHUDMessage(
+                Material: ACCEL_WARNING_MAT,
+                Origin: new Vector2D(0, 0.3),
+                BillBoardColor: Color.White,
+                Width: 0.15f,
+                Height: 0.25f
+
+                );
 
             toxicity_levels_.Init();
+            toxicity_lbl_.Init();
+            toxicity_lbl_.Append("Toxicity");
+
+            hud_initialised_ = true;
         }
         public void ShowWarning()
         {
-            if (text_.Length == 0)
+            if (hud_initialised_)
             {
-                text_.Append("Warning: Acceleration is beyond safety limits");
+                accel_warn_.Visible = true;
             }
-
         }
         public void ClearWarning()
         {
-            text_.Clear();
+            if (hud_initialised_)
+            {
+                accel_warn_.Visible = false;
+            }
         }
 
         public void Draw()
         {
-            if (message_ != null)
+            if (hud_initialised_)
             {
-                message_.Visible = text_.Length > 0;
-
-                toxicity_levels_.Progress = 50;//(int)ToxicityLevels;
+                toxicity_levels_.Progress = 100;//MathHelper.CeilToInt(ToxicityLevels);
+                toxicity_lbl_.Visible = toxicity_levels_.Progress > 0;
                 toxicity_levels_.Draw();
             }
-            
         }
 
-        private HudAPIv2.HUDMessage message_;
-        private ProgressBar toxicity_levels_ = new ProgressBar(new Vector2D(-0.8, -0.7), 4);
+        private HudAPIv2.BillBoardHUDMessage accel_warn_;
+        private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8, 0.9));
+        private ProgressBar toxicity_levels_ = new ProgressBar(new Vector2D(0.8, 0.7), 4);
         private HudAPIv2 api_handle_;
-        private Vector2D txt_origin_ = new Vector2D(-0.3, 0.5); // Top center
-        private StringBuilder text_ = new StringBuilder("");
+        private bool hud_initialised_ = false;
 
     }
 }
