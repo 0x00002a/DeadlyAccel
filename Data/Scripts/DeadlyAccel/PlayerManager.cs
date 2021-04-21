@@ -16,13 +16,12 @@ namespace Natomic.DeadlyAccel
 {
     class PlayerManager
     {
-        public IMyPlayer Player;
         public Dictionary<string, float> CushioningMultipliers;
 
         public Action<double> OnApplyDamage;
         public Action OnSkipDamage;
 
-        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>(); 
+        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>();
         private const int IFRAME_MAX = 3;
         private const double TOXICITY_CUTOFF = 100.0;
 
@@ -30,48 +29,7 @@ namespace Natomic.DeadlyAccel
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
         private readonly Dictionary<IMyPlayer, double> toxicity_buildups_ = new Dictionary<IMyPlayer, double>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
-        private readonly List<IMyCubeBlock> parents_cache_ = new List<IMyCubeBlock>();
-        private bool in_player_update_ = false;
 
-/*
-        public void RegisterParent(IMyCubeBlock parent)
-        {
-            if (parent != null && parent.HasInventory && juice_cache_.ContainsKey(parent))
-            {
-
-                var cache_list = new List<JuiceItem>();
-                JuiceManager.AllJuiceInInv(cache_list, parent.GetInventory());
-                juice_cache_[parent] = cache_list;
-
-                var inv = (MyInventory)parent.GetInventory();
-                inv.ContentsRemoved += OnParentInvUpdateRm;
-                
-            }
-            
-        }
-
-        private void OnParentInvUpdateAdd(MyInventoryBase item)
-        {
-
-        }
-        private void OnParentInvUpdateRm(MyPhysicalInventoryItem item, MyFixedPoint nb)
-        {
-            if (item.Content.TypeId.ToString() == JuiceTracker.CANISTER_TYPE_ID)
-            {
-                foreach (var parent in parents_cache_)
-                {
-                    var inv = (MyInventory)parent.GetInventory();
-                    if (inv.)
-                }
-                
-
-            }
-
-        }
-        public void DeregisterParent(IMyCubeBlock parent)
-        {
-
-        }*/
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
             var physics = player.Character.Physics;
@@ -117,7 +75,7 @@ namespace Natomic.DeadlyAccel
         public double CurrToxicBuildup()
         {
             double toxic_lvl;
-            if (!toxicity_buildups_.TryGetValue(Player, out toxic_lvl))
+            if (!toxicity_buildups_.TryGetValue(player, out toxic_lvl))
             {
                 toxic_lvl = 0;
             }
@@ -126,23 +84,23 @@ namespace Natomic.DeadlyAccel
         private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def)
         {
             var toxicity = CurrToxicBuildup(); // Have to create it first
-            toxicity_buildups_[Player] = toxicity + def.ToxicityPerMitagated * units_used;        
+            toxicity_buildups_[player] = toxicity + def.ToxicityPerMitagated * units_used;
         }
         private JuiceItem? CurrJuiceItem()
         {
-            var parent = Player?.Character?.Parent as IMyCubeBlock;
+            var parent = player?.Character?.Parent as IMyCubeBlock;
             var inv = parent?.GetInventory();
             var parentGrid = parent?.CubeGrid;
             var juice_max = parentGrid != null ? JuiceManager.MaxLevelJuiceInInv(inv) : null;
             return juice_max;
         }
-        
+
         private void ApplyToxicityDecay(double curr, API.JuiceDefinition def)
         {
             var buildup = curr - def.ToxicityDecay;
             if (buildup >= 0)
             {
-                toxicity_buildups_[Player] = buildup;
+                toxicity_buildups_[player] = buildup;
             }
         }
         private double CalcAccelDamage(IMyCubeBlock parent, JuiceItem? curr_juice, float accel, Settings settings)
@@ -241,7 +199,7 @@ namespace Natomic.DeadlyAccel
         private int CurrIFrames()
         {
             int frames;
-            if (!iframes_.TryGetValue(Player, out frames))
+            if (!iframes_.TryGetValue(player, out frames))
             {
                 frames = 0;
             }
@@ -252,20 +210,20 @@ namespace Natomic.DeadlyAccel
             var toxicity = CurrToxicBuildup();
             if (toxicity >= TOXICITY_CUTOFF)
             {
-                Log.Game.Debug("Player has too much toxicity, skipping juice reduction");
+                Log.Game.Debug("player has too much toxicity, skipping juice reduction");
                 return dmg;
             }
 
 
             var i = 0;
-            while(dmg > 0 && i < candidates.Count)
+            while (dmg > 0 && i < candidates.Count)
             {
                 var item = candidates[i];
                 var units_needed = dmg / item.JuiceDef.DamageMitagated;
                 var units_used = Math.Min((double)item.Canister.Amount, units_needed);
 
                 dmg -= units_used * item.JuiceDef.DamageMitagated;
-                
+
                 if (units_used == (double)item.Canister.Amount)
                 {
                     ++i;
@@ -279,70 +237,85 @@ namespace Natomic.DeadlyAccel
         {
 
         }
+        private bool UpdateIframes(IMyPlayer player, IMyEntity standing_on)
+        {
 
-        public void Update(Settings settings)
+            var curr_frames = CurrIFrames();
+            if (standing_on != null)
+            {
+                curr_frames = IFRAME_MAX;
+            }
+            if (curr_frames <= 0 || standing_on != null)
+            {
+                return true;
+            }
+            else if (curr_frames > 0)
+            {
+                curr_frames--;
+            }
+            iframes_[player] = curr_frames;
+            return false;
+
+
+        }
+        private void ApplyDamage(IMyPlayer player, float accel)
+        {
+            var parent = player.Character.Parent as IMyCubeBlock;
+          /*  var dmg = CalcAccelDamage(parent, juice, accel, settings);
+            dmg = ApplyJuice(juice, dmg);
+
+            if (dmg > 0)
+            {
+                OnApplyDamage?.Invoke(dmg);
+                return;
+            }*/
+        }
+
+        public void Update(IMyPlayer player, Settings settings)
         {
             try
             {
-                if (Player?.Character == null)
+                if (player?.Character == null)
                 {
                     // In MP, player references can be null when joining 
                     //Log.Game.Debug("Skipped player because null, is someone joining?");
                     return;
                 }
-
-                if (!Player.Character.IsDead)
+                if (!player.Character.IsDead
+                    && player.Character.Parent != null
+                    && !(settings.IgnoreJetpack && AccelNotDueToJetpack(player.Character))
+                    && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
+                    )
                 {
-                    var juice = CurrJuiceItem();
-
-                    var parentBase = Player.Character.Parent;
-
-                    if ((parentBase != null || !(AccelNotDueToJetpack(Player.Character) && settings.IgnoreJetpack)))
+                    var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
+                    var gridOn = GridStandingOn(player.Character); // This is expensive!
+                    var iframe_protected = UpdateIframes(player, gridOn);
+                    if (iframe_protected)
                     {
-
-                        var parent = parentBase as IMyCubeBlock;
-                        if (GridIgnored(parent?.CubeGrid, settings))
-                        {
-                            return;
-                        }
-
-                        var accel = CalcCharAccel(Player, parent);
-                        var gridOn = GridStandingOn(Player.Character); // This is expensive!
-                        var curr_frames = CurrIFrames();
-                        if (gridOn != null)
-                        {
-                            accel = EntityAccel(gridOn);
-                            curr_frames = IFRAME_MAX;
-                        }
-                        if (curr_frames <= 0 || gridOn != null)
-                        {
-                            var dmg = CalcAccelDamage(parent, juice, accel, settings);
-                            dmg = ApplyJuice(juice, dmg);
-
-                            if (dmg > 0)
-                            {
-                                OnApplyDamage?.Invoke(dmg);
-                                return;
-                            }
-                        }
-                        else if (curr_frames > 0)
-                        {
-                            curr_frames--;
-                        }
-                        iframes_[Player] = curr_frames;
+                        return;
                     }
-                    if (juice != null)
+                    if (gridOn != null)
                     {
-                        ApplyToxicityDecay(CurrToxicBuildup(), ((JuiceItem)juice).JuiceDef);
+                        accel = EntityAccel(gridOn);
                     }
+                    ApplyDamage(player, accel);
+
+
+                    /*   if (juice != null)
+                       {
+                           ApplyToxicityDecay(CurrToxicBuildup(), ((JuiceItem)juice).JuiceDef);
+                       }*/
 
                 }
-                OnSkipDamage?.Invoke();
+                else
+                {
+                    OnSkipDamage?.Invoke();
+                }
 
             }
             catch (Exception e)
             {
-                Log.Game.Error($"Failed to update player: '{Player?.IdentityId}'");
+                Log.Game.Error($"Failed to update player: '{player?.IdentityId}'");
                 Log.Game.Error(e);
             }
         }
