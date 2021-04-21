@@ -34,6 +34,7 @@ namespace Natomic.DeadlyAccel
         private readonly Dictionary<IMyPlayer, PlayerData> players_lookup_ = new Dictionary<IMyPlayer, PlayerData>();
         private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
+        #region Accel calculations
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
             var physics = player.Character.Physics;
@@ -76,49 +77,10 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-        public void DeregisterPlayer()
-        {
 
-        }
-        public double ToxicBuildupFor(IMyPlayer player)
-        {
-            return players_lookup_[player].toxicity_buildup;
-        }
-        private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
-        {
-            data.toxicity_buildup += def.ToxicityPerMitagated * units_used;
-            data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
-        }
-        
 
-        private void ApplyToxicityDecay(PlayerData data)
-        {
-            data.toxicity_buildup -= data.lowest_toxic_decay;
-        }
-
-        private double CalcAccelDamage(IMyCubeBlock parent, float accel, Settings settings)
-        {
-            var cushionFactor = 0f;
-
-            if (parent != null)
-            {
-                CushioningMultipliers.TryGetValue(DeadlyAccelSession.FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
-            }
-            if (accel > settings.SafeMaximum)
-            {
-                var rem_accel = (accel - settings.SafeMaximum);
-                var dmg = Math.Pow(rem_accel, settings.DamageScaleBase);
-                dmg *= (1 - cushionFactor);
-                return dmg;
-
-            }
-            return 0.0;
-
-        }
-        public void UpdateParents(List<IMyPlayer> players)
-        {
-        }
-
+        #endregion
+        #region Grid and voxel checks 
         private void AddRayToCache(Vector3D v1, Vector3D v2)
         {
             const int FILTER_LAYER = 18;
@@ -184,12 +146,33 @@ namespace Natomic.DeadlyAccel
                 return false;
             }
         }
-        
+
+        #endregion
+        #region Misc invincibility
         private int CurrIFrames(IMyPlayer player)
         {
             var data = players_lookup_[player];
             return data.iframes;
         }
+        private bool UpdateIframes(PlayerData data, IMyEntity standing_on)
+        {
+            if (standing_on != null)
+            {
+                data.iframes = IFRAME_MAX;
+            }
+            if (data.iframes <= 0 || standing_on != null)
+            {
+                return true;
+            }
+            else if (data.iframes > 0)
+            {
+                data.iframes--;
+            }
+            return false;
+        }
+
+        #endregion
+        #region Juice 
         private double ApplyJuice(double dmg, PlayerData data, List<JuiceItem> candidates, IMyInventory inv)
         {
             if (data.toxicity_buildup >= TOXICITY_CUTOFF)
@@ -219,40 +202,58 @@ namespace Natomic.DeadlyAccel
             }
             return dmg;
         }
-        
-        private bool UpdateIframes(PlayerData data, IMyEntity standing_on)
+
+        #endregion
+        #region Toxicity tracking
+        public double ToxicBuildupFor(IMyPlayer player)
         {
-            if (standing_on != null)
-            {
-                data.iframes = IFRAME_MAX;
-            }
-            if (data.iframes <= 0 || standing_on != null)
-            {
-                return true;
-            }
-            else if (data.iframes > 0)
-            {
-                data.iframes--;
-            }
-            return false;
+            return players_lookup_[player].toxicity_buildup;
         }
+        private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
+        {
+            data.toxicity_buildup += def.ToxicityPerMitagated * units_used;
+            data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
+        }
+
+
+        private void ApplyToxicityDecay(PlayerData data)
+        {
+            data.toxicity_buildup -= data.lowest_toxic_decay;
+        }
+
+        private double CalcAccelDamage(IMyCubeBlock parent, float accel, Settings settings)
+        {
+            var cushionFactor = 0f;
+
+            if (parent != null)
+            {
+                CushioningMultipliers.TryGetValue(DeadlyAccelSession.FormatCushionLookup(parent.BlockDefinition.TypeId.ToString(), parent.BlockDefinition.SubtypeId), out cushionFactor);
+            }
+            if (accel > settings.SafeMaximum)
+            {
+                var rem_accel = (accel - settings.SafeMaximum);
+                var dmg = Math.Pow(rem_accel, settings.DamageScaleBase);
+                dmg *= (1 - cushionFactor);
+                return dmg;
+
+            }
+            return 0.0;
+
+        }
+
+        #endregion
+
+        #region Control/top level 
         private double CalcTotalDmg(IMyPlayer player, float accel, Settings settings)
         {
             var parent = player.Character.Parent as IMyCubeBlock;
             inv_item_cache_.Clear();
             JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
-            
+
 
             var dmg = CalcAccelDamage(parent, accel, settings);
             dmg = ApplyJuice(dmg, players_lookup_[player], inv_item_cache_, parent.GetInventory());
             return dmg;
-        }
-        private void RegisterPlayer(IMyPlayer p)
-        {
-            if (!players_lookup_.ContainsKey(p))
-            {
-                players_lookup_.Add(p, new PlayerData());
-            }
         }
 
         public double Update(IMyPlayer player, Settings settings)
@@ -303,5 +304,20 @@ namespace Natomic.DeadlyAccel
 
             return 0.0;
         }
+
+        #endregion
+        #region Player tracking
+        private void RegisterPlayer(IMyPlayer p)
+        {
+            if (!players_lookup_.ContainsKey(p))
+            {
+                players_lookup_.Add(p, new PlayerData());
+            }
+        }
+        public void DeregisterPlayer()
+        {
+
+        }
+        #endregion
     }
 }
