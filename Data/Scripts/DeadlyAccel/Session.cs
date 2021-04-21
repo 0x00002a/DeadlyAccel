@@ -328,13 +328,13 @@ namespace Natomic.DeadlyAccel
                 else if (!p.IsBot)
                 {
                     var dmg = player_.Update(p, settings_);
+                    if (hud != null)
+                    {
+                        hud.ToxicityLevels = Math.Ceiling(player_.ToxicBuildupFor(p));
+                    }
                     if (dmg != 0)
                     {
-                        if (hud != null)
-                        {
-                            hud.ToxicityLevels = Math.Ceiling(player_.ToxicBuildupFor(p));
-                            hud.ShowWarning();
-                        } 
+                        hud?.ShowWarning();
                         if (IsSP || !IsClient)
                         {
                             p.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);

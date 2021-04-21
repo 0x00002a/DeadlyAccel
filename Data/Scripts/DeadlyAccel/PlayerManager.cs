@@ -150,7 +150,7 @@ namespace Natomic.DeadlyAccel
         #endregion
         #region Misc invincibility
         
-        private bool UpdateIframes(PlayerData data, IMyEntity standing_on)
+        private bool HasIframes(PlayerData data, IMyEntity standing_on)
         {
             if (standing_on != null)
             {
@@ -158,13 +158,13 @@ namespace Natomic.DeadlyAccel
             }
             if (data.iframes <= 0 || standing_on != null)
             {
-                return true;
+                return false;
             }
             else if (data.iframes > 0)
             {
                 data.iframes--;
             }
-            return false;
+            return true;
         }
 
         #endregion
@@ -184,16 +184,16 @@ namespace Natomic.DeadlyAccel
             while (dmg > 0 && i < candidates.Count)
             {
                 var item = candidates[i];
-                var units_needed = dmg / item.JuiceDef.DamageMitagated;
+                var units_needed = dmg / 1;
                 var units_used = Math.Min((double)item.Canister.Amount, units_needed);
 
-                dmg -= units_used * item.JuiceDef.DamageMitagated;
+                dmg -= units_used / 1;
 
                 if (units_used == (double)item.Canister.Amount)
-                {
-                    ++i;
+                {    
+                    ++i;        
                 }
-                inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
+                inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)(units_used * item.JuiceDef.ConsumptionRate));
                 ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
             }
             return dmg;
@@ -208,13 +208,20 @@ namespace Natomic.DeadlyAccel
         private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
         {
             data.toxicity_buildup += def.ToxicityPerMitagated * units_used;
-            data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
+            if (data.lowest_toxic_decay > 0)
+            {
+                data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
+            } else
+            {
+                data.lowest_toxic_decay = def.ToxicityDecay;
+            }
         }
 
 
         private void ApplyToxicityDecay(PlayerData data)
         {
             data.toxicity_buildup -= data.lowest_toxic_decay;
+            data.toxicity_buildup = Math.Max(data.toxicity_buildup, 0);
         }
 
         private double CalcAccelDamage(IMyCubeBlock parent, float accel, Settings settings)
@@ -247,9 +254,15 @@ namespace Natomic.DeadlyAccel
             JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
 
 
+            var pdata = players_lookup_[player.IdentityId];
             var dmg = CalcAccelDamage(parent, accel, settings);
-            dmg = ApplyJuice(dmg, players_lookup_[player.IdentityId], inv_item_cache_, parent.GetInventory());
-            return dmg;
+            var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory());
+            if (dmg == mod_dmg)
+            {
+                // Juice not used 
+                ApplyToxicityDecay(pdata);
+            }
+            return mod_dmg;
         }
 
         public double Update(IMyPlayer player, Settings settings)
@@ -275,7 +288,7 @@ namespace Natomic.DeadlyAccel
 
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
                     var gridOn = GridStandingOn(player.Character); // This is expensive!
-                    var iframe_protected = UpdateIframes(players_lookup_[pid], gridOn);
+                    var iframe_protected = HasIframes(players_lookup_[pid], gridOn);
                     if (!iframe_protected)
                     {
 

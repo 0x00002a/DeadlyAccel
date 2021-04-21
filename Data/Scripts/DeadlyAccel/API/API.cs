@@ -13,13 +13,13 @@ namespace Natomic.DeadlyAccel.API
         [ProtoMember(1)]
         public string SubtypeId;
         [ProtoMember(2)]
-        public float DamageMitagated;
-        [ProtoMember(3)]
         public float ToxicityPerMitagated;
-        [ProtoMember(4)]
+        [ProtoMember(3)]
         public float ToxicityDecay; // Reduction of toxicity per update (when juice not used that update)
-        [ProtoMember(5)]
+        [ProtoMember(4)]
         public int Ranking; // Avaliable juice is consumed in order from lowest to highest ranking
+        [ProtoMember(5)]
+        public float ConsumptionRate; // Qty of item consumed per use
 
         public override string ToString()
         {
