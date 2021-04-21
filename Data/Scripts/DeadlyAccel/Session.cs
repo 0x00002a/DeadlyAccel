@@ -26,6 +26,8 @@ using System.Collections.Generic;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
+using VRage.Game.ModAPI;
+using VRage.ModAPI;
 using VRage.Utils;
 using Net = SENetworkAPI;
 
@@ -325,10 +327,24 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, during physics simulation and only if game is not paused.
             // NOTE in this example this won't actually be called because of the lack of MyUpdateOrder.Simulation argument in MySessionComponentDescriptor
         }
+        private void RegisterEvents(IMyPlayer player)
+        {
+            ((IMyEntity)player).Hierarchy.OnParentChanged += (old, curr) =>
+            {
+                player_.DeregisterParent(old as IMyCubeBlock);
+                player_.RegisterParent(curr as IMyCubeBlock);
+            };
+
+        }
         private void UpdatePlayersCache()
         {
             MyAPIGateway.Multiplayer.Players.GetPlayers(null, p =>
             {
+                if (!player_cache_.ContainsKey(p.IdentityId))
+                {
+                    RegisterEvents(p);
+                }
+
                 player_cache_[p.IdentityId] = p;
                 return false;
             });

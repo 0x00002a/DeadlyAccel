@@ -34,6 +34,26 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info($"Skipped juice def '{def.SubtypeId}' because it has already been added");
             }
         }
+        public void AllJuiceInInv(List<JuiceItem> readin, IMyInventory inv)
+        {
+            if (inv == null)
+            {
+                return;
+            }
+
+            var inv_rel = (MyInventory)inv;
+            var items = (inv_rel).GetItems(); // If this cast is not safe then then universe has imploded
+
+            foreach (var item in items)
+            {
+                var stype_id = item.Content.SubtypeId.ToString();
+                if (item.Content.TypeId.ToString() == CANISTER_TYPE_ID && items_.ContainsKey(stype_id))
+                {
+                    var juice_def = items_[stype_id];
+                    readin.Add(new JuiceItem { Inv = inv_rel, Canister = item, JuiceDef = juice_def });
+                }
+            }
+        }
         public JuiceItem? MaxLevelJuiceInInv(IMyInventory inv)
         {
             inventory_cache_.Clear();

@@ -1,9 +1,12 @@
 ﻿using Natomic.Logging;
+using Sandbox.Game;
 using Sandbox.Game.Entities.Character.Components;
+using Sandbox.Game.World;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using VRage;
+using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
 using VRage.ModAPI;
@@ -19,7 +22,7 @@ namespace Natomic.DeadlyAccel
         public Action<double> OnApplyDamage;
         public Action OnSkipDamage;
 
-        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>(); // Todo: Fix this, it won't work for MP
+        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>(); 
         private const int IFRAME_MAX = 3;
         private const double TOXICITY_CUTOFF = 100.0;
 
@@ -27,8 +30,48 @@ namespace Natomic.DeadlyAccel
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
         private readonly Dictionary<IMyPlayer, double> toxicity_buildups_ = new Dictionary<IMyPlayer, double>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
+        private readonly List<IMyCubeBlock> parents_cache_ = new List<IMyCubeBlock>();
+        private bool in_player_update_ = false;
 
+/*
+        public void RegisterParent(IMyCubeBlock parent)
+        {
+            if (parent != null && parent.HasInventory && juice_cache_.ContainsKey(parent))
+            {
 
+                var cache_list = new List<JuiceItem>();
+                JuiceManager.AllJuiceInInv(cache_list, parent.GetInventory());
+                juice_cache_[parent] = cache_list;
+
+                var inv = (MyInventory)parent.GetInventory();
+                inv.ContentsRemoved += OnParentInvUpdateRm;
+                
+            }
+            
+        }
+
+        private void OnParentInvUpdateAdd(MyInventoryBase item)
+        {
+
+        }
+        private void OnParentInvUpdateRm(MyPhysicalInventoryItem item, MyFixedPoint nb)
+        {
+            if (item.Content.TypeId.ToString() == JuiceTracker.CANISTER_TYPE_ID)
+            {
+                foreach (var parent in parents_cache_)
+                {
+                    var inv = (MyInventory)parent.GetInventory();
+                    if (inv.)
+                }
+                
+
+            }
+
+        }
+        public void DeregisterParent(IMyCubeBlock parent)
+        {
+
+        }*/
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
             var physics = player.Character.Physics;
@@ -80,10 +123,10 @@ namespace Natomic.DeadlyAccel
             }
             return toxic_lvl;
         }
-        private void ApplyToxicBuildup(float accel, API.JuiceDefinition def)
+        private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def)
         {
             var toxicity = CurrToxicBuildup(); // Have to create it first
-            toxicity_buildups_[Player] = toxicity + def.ToxicityBase * def.ToxicityCoefficent * accel;
+            toxicity_buildups_[Player] = toxicity + def.ToxicityPerMitagated * units_used;        
         }
         private JuiceItem? CurrJuiceItem()
         {
@@ -93,32 +136,7 @@ namespace Natomic.DeadlyAccel
             var juice_max = parentGrid != null ? JuiceManager.MaxLevelJuiceInInv(inv) : null;
             return juice_max;
         }
-        private double JuiceDmgReductionCoefficent(float rem_accel, JuiceItem? juice_max)
-        {
-            var toxicity = CurrToxicBuildup();
-            if (toxicity >= TOXICITY_CUTOFF)
-            {
-                Log.Game.Debug("Player has too much toxicity, skipping juice reduction");
-                return 1.0;
-            }
-
-
-            if (juice_max != null)
-            {
-                var juice = (JuiceItem)juice_max;
-                if (juice.JuiceDef.SafePointIncrease >= rem_accel)
-                {
-                    // Juice stopped damage
-
-                    //juice.Canister.Amount -= (MyFixedPoint)juice.JuiceDef.ComsumptionRate;
-                    juice.Inv.RemoveItems(juice.Canister.ItemId, (MyFixedPoint)juice.JuiceDef.ComsumptionRate);
-                    ApplyToxicBuildup(rem_accel, juice.JuiceDef);
-
-                    return 0.0;
-                }
-            }
-            return 1.0;
-        }
+        
         private void ApplyToxicityDecay(double curr, API.JuiceDefinition def)
         {
             var buildup = curr - def.ToxicityDecay;
@@ -146,6 +164,9 @@ namespace Natomic.DeadlyAccel
             }
             return 0.0;
 
+        }
+        public void UpdateParents(List<IMyPlayer> players)
+        {
         }
 
         private void AddRayToCache(Vector3D v1, Vector3D v2)
@@ -226,6 +247,38 @@ namespace Natomic.DeadlyAccel
             }
             return frames;
         }
+        private double ApplyJuice(double dmg, List<JuiceItem> candidates)
+        {
+            var toxicity = CurrToxicBuildup();
+            if (toxicity >= TOXICITY_CUTOFF)
+            {
+                Log.Game.Debug("Player has too much toxicity, skipping juice reduction");
+                return dmg;
+            }
+
+
+            var i = 0;
+            while(dmg > 0 && i < candidates.Count)
+            {
+                var item = candidates[i];
+                var units_needed = dmg / item.JuiceDef.DamageMitagated;
+                var units_used = Math.Min((double)item.Canister.Amount, units_needed);
+
+                dmg -= units_used * item.JuiceDef.DamageMitagated;
+                
+                if (units_used == (double)item.Canister.Amount)
+                {
+                    ++i;
+                }
+                item.Inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
+                ApplyToxicBuildup((float)units_used, item.JuiceDef);
+            }
+            return dmg;
+        }
+        private void RegisterInvEvents()
+        {
+
+        }
 
         public void Update(Settings settings)
         {
@@ -264,6 +317,8 @@ namespace Natomic.DeadlyAccel
                         if (curr_frames <= 0 || gridOn != null)
                         {
                             var dmg = CalcAccelDamage(parent, juice, accel, settings);
+                            dmg = ApplyJuice(juice, dmg);
+
                             if (dmg > 0)
                             {
                                 OnApplyDamage?.Invoke(dmg);
