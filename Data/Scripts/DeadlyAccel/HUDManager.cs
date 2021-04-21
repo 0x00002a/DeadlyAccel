@@ -23,6 +23,7 @@ using VRageMath;
 using Natomic.Logging;
 using System;
 using System.Linq;
+using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 
 namespace Natomic.DeadlyAccel
 {
@@ -57,7 +58,7 @@ namespace Natomic.DeadlyAccel
         {
             if (widget_ == null)
             {
-                widget_ = new HudAPIv2.HUDMessage(new StringBuilder(), Origin: location_);
+                widget_ = new HudAPIv2.HUDMessage(new StringBuilder(), Origin: location_, Blend: BlendTypeEnum.PostPP);
             }
         }
 
@@ -207,7 +208,7 @@ namespace Natomic.DeadlyAccel
                     ));
             }
 
-            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(-0.8, -0.4));
+            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.55, 0.85));
             private FlashController<HudAPIv2.BillBoardHUDMessage> toxicity_levels_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         }
 

@@ -350,6 +350,7 @@ namespace Natomic.DeadlyAccel
                     if (hud != null)
                     {
                         hud.ToxicityLevels = player_.CurrToxicBuildup();
+
                     }
                 }
             }

@@ -202,8 +202,6 @@ All timestamps are in UTC
 
             public string ModName;
 
-
-
             public void Write(LogType t, string message)
             {
                 files_[t].Write(message);

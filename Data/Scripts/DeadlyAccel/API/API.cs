@@ -8,7 +8,7 @@ namespace Natomic.DeadlyAccel.API
     using ApiDict = Dictionary<string, Func<object, bool>>;
 
     [ProtoContract]
-    struct JuiceDefinition
+    public struct JuiceDefinition
     {
         [ProtoMember(1)]
         public string SubtypeId;
@@ -25,7 +25,7 @@ namespace Natomic.DeadlyAccel.API
 
         public override string ToString()
         {
-            return $"Subtype: {SubtypeId}\nSafePointIncrease: {SafePointIncrease}\nConsumeRate: {ComsumptionRate}";
+            return MyAPIGateway.Utilities.SerializeToXML(this);
         }
     }
     class DeadlyAccelAPI
