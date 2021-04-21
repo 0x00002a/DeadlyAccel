@@ -349,7 +349,7 @@ namespace Natomic.DeadlyAccel
                     player_.Update(settings_);
                     if (hud != null)
                     {
-                        hud.ToxicityLevels = player_.CurrToxicBuildup();
+                        hud.ToxicityLevels = Math.Ceiling(player_.CurrToxicBuildup());
 
                     }
                 }

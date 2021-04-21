@@ -164,7 +164,7 @@ namespace Natomic.DeadlyAccel
 
             public bool EmergencyMode => Toxicity >= 95;
 
-            public Vector2D ICON_NORMAL_POS = new Vector2D(0.6, -0.8);
+            public Vector2D ICON_NORMAL_POS = new Vector2D(0.875, -0.42);
 
             public HudAPIv2.BillBoardHUDMessage Icon => toxicity_levels_.Widget;
 
@@ -174,10 +174,10 @@ namespace Natomic.DeadlyAccel
                 { 
                     var draw = toxicity_ > 0;
 
+                    toxicity_levels_.Flashing = EmergencyMode;
                     toxicity_levels_.Widget.Visible = draw;
                     toxicity_lbl_.Visible = draw;
 
-                    toxicity_levels_.Flashing = EmergencyMode;
                     if (EmergencyMode) {
                         //toxicity_levels_.Widget.Origin = EMERGENCY_POS;
                     }
@@ -202,13 +202,13 @@ namespace Natomic.DeadlyAccel
                     Material: MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol"),
                     Origin: ICON_NORMAL_POS,
                     BillBoardColor: Color.White,
-                    Width: 0.1f,
-                    Height: 0.15f
-
+                    Width: 0.08f,
+                    Height: 0.12f
                     ));
+                toxicity_levels_.Widget.Visible = false;
             }
 
-            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.55, 0.85));
+            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8745, -0.497));
             private FlashController<HudAPIv2.BillBoardHUDMessage> toxicity_levels_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         }
 
@@ -225,7 +225,6 @@ namespace Natomic.DeadlyAccel
             }
         }
         public MyStringId ACCEL_WARNING_MAT = MyStringId.GetOrCompute("NI_DeadlyAccel_AccelWarning");
-        private Vector2D WARNING_EMERGENCY_POS = new Vector2D(-0.2, 0.8);
         private Vector2D WARNING_NORMAL_POS = new Vector2D(0, 0.8);
 
         void UpdateWarningPos()
