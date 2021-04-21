@@ -26,48 +26,6 @@ using System.Linq;
 
 namespace Natomic.DeadlyAccel
 {
-    static class CoordHelper
-    {
-        static Vector2D KEEN_ORIGIN = new Vector2D(-1, 1); // I wish I was joking
-
-        /// <summary>
-        /// Translates a keen -1, 1 -> 1, -1 based coordinate into a 0, 0 -> 1, 1 coordinate that can actually be reasoned about
-        /// </summary>
-        /// <param name="insane"></param>
-        /// <returns></returns>
-        public static Vector2D KeenCoordToSaneCoord(Vector2D insane)
-        {
-            var translation = new Vector2D(MathHelperD.Distance(insane.X, KEEN_ORIGIN.X), MathHelperD.Distance(insane.Y, KEEN_ORIGIN.Y));
-            return translation / 2;
-        }
-        public static Vector2D SaneCoordToKeenCoord(Vector2D sane)
-        {
-            return Vector2D.Zero;
-        }
-        public static void LayoutHorizontally(double y, double padding, Vector2D x_domain, params HudAPIv2.BillBoardHUDMessage[] widgets) // I'd rather not make this take List<T>
-        {
-            var nb_visible = widgets.Count(w => w.Visible);
-            var x_range = MathHelperD.Distance(x_domain.X, x_domain.Y);
-            var total_padding = padding * (nb_visible - 1);
-            var total_width = x_range - total_padding;
-            var w_per_widget = total_width / widgets.Length;
-            var visible_diff = widgets.Length - nb_visible;
-            var lhs_margin = (total_width * visible_diff + padding * (MathHelperD.Max(0, visible_diff - 1))) * 0.5;
-
-            var vn = 0;
-            foreach(var widget in widgets)
-            {
-                if (widget.Visible)
-                {
-                    var extra = vn != 0 ? 0 : lhs_margin - padding;
-                    widget.Origin = new Vector2D(x_domain.X + w_per_widget * vn + padding + extra, y);
-                    ++vn;
-                }
-                
-            }
-
-        }
-    }
     class TextLabel { 
         public bool Visible { set { widget_.Visible = value; } get { return widget_.Visible; } }
         public double Scale { set { widget_.Scale = value; } get { return widget_.Scale; } }
@@ -275,7 +233,18 @@ namespace Natomic.DeadlyAccel
             {
                 if (toxicity_handler_.EmergencyMode)
                 {
-                    CoordHelper.LayoutHorizontally(0.8, 0.1, new Vector2D(-0.2, 0.2), accel_warn_.Widget, toxicity_handler_.Icon);
+                    //CoordHelper.LayoutHorizontally(-0.15, 0.8, 0.15, accel_warn_.Widget, toxicity_handler_.Icon);
+                    double start_x;
+                    if (accel_warn_.Flashing)
+                    {
+                        start_x = -0.1;
+                        accel_warn_.Widget.Origin = new Vector2D(start_x, 0.8);
+                    } else
+                    {
+                        start_x = 0;
+                    }
+                    toxicity_handler_.Icon.Origin = new Vector2D(Math.Abs(start_x), 0.8);
+                    
                     //accel_warn_.Widget.Origin = WARNING_EMERGENCY_POS;
                 }
                 else
