@@ -22,6 +22,7 @@ using VRage.Utils;
 using VRageMath;
 using Natomic.Logging;
 using System;
+using System.Linq;
 
 namespace Natomic.DeadlyAccel
 {
@@ -42,6 +43,29 @@ namespace Natomic.DeadlyAccel
         public static Vector2D SaneCoordToKeenCoord(Vector2D sane)
         {
             return Vector2D.Zero;
+        }
+        public static void LayoutHorizontally(double y, double padding, Vector2D x_domain, params HudAPIv2.BillBoardHUDMessage[] widgets) // I'd rather not make this take List<T>
+        {
+            var nb_visible = widgets.Count(w => w.Visible);
+            var x_range = MathHelperD.Distance(x_domain.X, x_domain.Y);
+            var total_padding = padding * (nb_visible - 1);
+            var total_width = x_range - total_padding;
+            var w_per_widget = total_width / widgets.Length;
+            var visible_diff = widgets.Length - nb_visible;
+            var lhs_margin = (total_width * visible_diff + padding * (MathHelperD.Max(0, visible_diff - 1))) * 0.5;
+
+            var vn = 0;
+            foreach(var widget in widgets)
+            {
+                if (widget.Visible)
+                {
+                    var extra = vn != 0 ? 0 : lhs_margin - padding;
+                    widget.Origin = new Vector2D(x_domain.X + w_per_widget * vn + padding + extra, y);
+                    ++vn;
+                }
+                
+            }
+
         }
     }
     class TextLabel { 
@@ -87,7 +111,7 @@ namespace Natomic.DeadlyAccel
         private HudAPIv2.HUDMessage widget_;
 
     }
-    class FlashingHandler<T> where T: HudAPIv2.MessageBase
+    class FlashController<T> where T : HudAPIv2.MessageBase
     {
         public bool Flashing;
         public int IntervalTicks; // Ticks per switch 
@@ -96,11 +120,11 @@ namespace Natomic.DeadlyAccel
         private int ticks_since_switch_ = 0;
 
 
-        void Init(T widget)
+        public void Init(T widget)
         {
             Widget = widget;
         }
-        void Draw()
+        public void Draw()
         {
             if (Flashing)
             {
@@ -108,14 +132,12 @@ namespace Natomic.DeadlyAccel
                 {
                     ticks_since_switch_ = 0;
                     Widget.Visible = !Widget.Visible;
-                } else
+                }
+                else
                 {
                     ++ticks_since_switch_;
                 }
 
-            } else
-            {
-                ticks_since_switch_ = 0;
             }
         }
 
@@ -162,26 +184,50 @@ namespace Natomic.DeadlyAccel
         private class ToxicityHUD
         {
             private int toxicity_;
-            public int Toxicity { get { return toxicity_; } set { toxicity_ = value; UpdateToxicityColor(); } }
+            public int Toxicity
+            {
+                get { return toxicity_; }
+                set
+                {
+                    if (toxicity_levels_.Widget != null)
+                    {
+                        toxicity_ = value;
+                        UpdateToxicityColor();
+                    }
+                }
+            }
             private MyStringId HAZZARD_00 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_0");
             private MyStringId HAZZARD_20 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_20");
             private MyStringId HAZZARD_60 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_60");
             private MyStringId HAZZARD_80 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_80");
 
+            public Vector2D EMERGENCY_POS = new Vector2D(0.2, 0.8);
+
+            public bool EmergencyMode => Toxicity >= 95;
+
+            public Vector2D ICON_NORMAL_POS = new Vector2D(0.6, -0.8);
+
+            public HudAPIv2.BillBoardHUDMessage Icon => toxicity_levels_.Widget;
+
             private void UpdateToxicityColor()
             {
-                if (toxicity_levels_ != null)
+                if (toxicity_levels_.Widget != null)
                 { 
                     var draw = toxicity_ > 0;
 
-                    toxicity_levels_.Visible = draw;
+                    toxicity_levels_.Widget.Visible = draw;
                     toxicity_lbl_.Visible = draw;
+
+                    toxicity_levels_.Flashing = EmergencyMode;
+                    if (EmergencyMode) {
+                        //toxicity_levels_.Widget.Origin = EMERGENCY_POS;
+                    }
 
 
                     if (draw)
                     {
                         var new_mat = toxicity_ > 80 ? HAZZARD_80 : toxicity_ > 60 ? HAZZARD_60 : toxicity_ > 20 ? HAZZARD_20 : HAZZARD_00;
-                        toxicity_levels_.Material = new_mat;
+                        toxicity_levels_.Widget.Material = new_mat;
                         toxicity_lbl_.Clear();
                         toxicity_lbl_.Append($"{toxicity_}%");
                     }
@@ -189,43 +235,73 @@ namespace Natomic.DeadlyAccel
             }
             public void Init()
             {
-                var toxicity_symbol_pos = new Vector2D(0.6, -0.8);
                 toxicity_lbl_.Init();
 
-                toxicity_levels_ = new HudAPIv2.BillBoardHUDMessage(
+                toxicity_levels_.Flashing = false;
+                toxicity_levels_.IntervalTicks = 15;
+                toxicity_levels_.Init(new HudAPIv2.BillBoardHUDMessage(
                     Material: MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol"),
-                    Origin: toxicity_symbol_pos,
+                    Origin: ICON_NORMAL_POS,
                     BillBoardColor: Color.White,
                     Width: 0.1f,
                     Height: 0.15f
 
-                    );
+                    ));
             }
 
             private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(-0.8, -0.4));
-            private HudAPIv2.BillBoardHUDMessage toxicity_levels_;
+            private FlashController<HudAPIv2.BillBoardHUDMessage> toxicity_levels_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         }
 
         public bool Enabled { get; }
-        public double ToxicityLevels { set { toxicity_handler_.Toxicity = (int)value; } }
+        public double ToxicityLevels
+        {
+            set
+            {
+                if (value != toxicity_handler_.Toxicity)
+                {
+                    toxicity_handler_.Toxicity = (int)value; 
+                    UpdateWarningPos();
+                }
+            }
+        }
         public MyStringId ACCEL_WARNING_MAT = MyStringId.GetOrCompute("NI_DeadlyAccel_AccelWarning");
+        private Vector2D WARNING_EMERGENCY_POS = new Vector2D(-0.2, 0.8);
+        private Vector2D WARNING_NORMAL_POS = new Vector2D(0, 0.8);
 
+        void UpdateWarningPos()
+        {
+            if (hud_initialised_)
+            {
+                if (toxicity_handler_.EmergencyMode)
+                {
+                    CoordHelper.LayoutHorizontally(0.8, 0.1, new Vector2D(-0.2, 0.2), accel_warn_.Widget, toxicity_handler_.Icon);
+                    //accel_warn_.Widget.Origin = WARNING_EMERGENCY_POS;
+                }
+                else
+                {
+                    accel_warn_.Widget.Origin = WARNING_NORMAL_POS;
+                    toxicity_handler_.Icon.Origin = toxicity_handler_.ICON_NORMAL_POS;
+                }
+            }
+        }
         public void Init()
         {
             api_handle_ = new HudAPIv2(OnHudInit);
+            accel_warn_.IntervalTicks = 20;
+            accel_warn_.Flashing = false;
         }
         private void OnHudInit()
         {
-            accel_warn_ = new HudAPIv2.BillBoardHUDMessage(
+            
+            accel_warn_.Init(new HudAPIv2.BillBoardHUDMessage(
                 Material: ACCEL_WARNING_MAT,
-                Origin: new Vector2D(0, 0.8),
+                Origin: WARNING_NORMAL_POS,
                 BillBoardColor: Color.White,
                 Width: 0.15f,
                 Height: 0.25f
-
-                );
+                ));
             toxicity_handler_.Init();
-
 
             hud_initialised_ = true;
         }
@@ -233,14 +309,17 @@ namespace Natomic.DeadlyAccel
         {
             if (hud_initialised_)
             {
-                accel_warn_.Visible = true;
+                accel_warn_.Flashing = true;
+                UpdateWarningPos();
             }
         }
         public void ClearWarning()
         {
             if (hud_initialised_)
             {
-                accel_warn_.Visible = false;
+                accel_warn_.Flashing = false;
+                accel_warn_.Widget.Visible = false;
+                UpdateWarningPos();
             }
         }
 
@@ -248,7 +327,8 @@ namespace Natomic.DeadlyAccel
         {
             if (hud_initialised_)
             {
-                toxicity_handler_.Toxicity = 90;
+                //toxicity_handler_.Toxicity = 95;
+                accel_warn_.Draw();
                 /*toxicity_handler_
                 toxicity_levels_.Progress = 100;//MathHelper.CeilToInt(ToxicityLevels);
                 toxicity_lbl_.Visible = toxicity_levels_.Progress > 0;
@@ -258,7 +338,7 @@ namespace Natomic.DeadlyAccel
 
 
         private ToxicityHUD toxicity_handler_ = new ToxicityHUD();
-        private HudAPIv2.BillBoardHUDMessage accel_warn_;
+        private FlashController<HudAPIv2.BillBoardHUDMessage> accel_warn_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         private HudAPIv2 api_handle_;
         private bool hud_initialised_ = false;
 
