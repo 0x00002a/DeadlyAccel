@@ -181,28 +181,6 @@ namespace Natomic.DeadlyAccel
         private void InitPlayerManager()
         {
             player_.CushioningMultipliers = cushioning_mulipliers_;
-            if (IsClient)
-            {
-
-                player_.OnApplyDamage += dmg =>
-                {
-                    if (hud == null)
-                    {
-                        Log.Game.Error("HUD is null for clientside player");
-                        return;
-                    }
-                    hud.ShowWarning();
-                };
-                player_.OnSkipDamage += () => hud?.ClearWarning();
-            }
-            if (!IsClient || IsSP)
-            {
-                player_.OnApplyDamage += dmg =>
-                            {
-                                player_.Player.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
-                                Log.Game.Debug($"Applied damage: {dmg} to player: {player_.Player.DisplayName}");
-                            };
-            }
         }
         private Settings LoadSettings()
         {
@@ -327,24 +305,11 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, during physics simulation and only if game is not paused.
             // NOTE in this example this won't actually be called because of the lack of MyUpdateOrder.Simulation argument in MySessionComponentDescriptor
         }
-        private void RegisterEvents(IMyPlayer player)
-        {
-            ((IMyEntity)player).Hierarchy.OnParentChanged += (old, curr) =>
-            {
-                player_.DeregisterParent(old as IMyCubeBlock);
-                player_.RegisterParent(curr as IMyCubeBlock);
-            };
-
-        }
+       
         private void UpdatePlayersCache()
         {
             MyAPIGateway.Multiplayer.Players.GetPlayers(null, p =>
             {
-                if (!player_cache_.ContainsKey(p.IdentityId))
-                {
-                    RegisterEvents(p);
-                }
-
                 player_cache_[p.IdentityId] = p;
                 return false;
             });
@@ -361,12 +326,21 @@ namespace Natomic.DeadlyAccel
                 }
                 else if (!p.IsBot)
                 {
-                    player_.Player = p;
-                    player_.Update(settings_);
-                    if (hud != null)
+                    var dmg = player_.Update(p, settings_);
+                    if (dmg != 0)
                     {
-                        hud.ToxicityLevels = Math.Ceiling(player_.CurrToxicBuildup());
-
+                        if (hud != null)
+                        {
+                            hud.ToxicityLevels = Math.Ceiling(player_.ToxicBuildupFor(p));
+                            hud.ShowWarning();
+                        } 
+                        if (IsSP || !IsClient)
+                        {
+                            p.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);
+                        }
+                    } else if (hud != null)
+                    {
+                        hud.ClearWarning();
                     }
                 }
             }

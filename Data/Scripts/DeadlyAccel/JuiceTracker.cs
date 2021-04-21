@@ -13,7 +13,6 @@ namespace Natomic.DeadlyAccel
     {
         public API.JuiceDefinition JuiceDef;
         public MyPhysicalInventoryItem Canister;
-        public MyInventory Inv;
     }
     class JuiceTracker
     {
@@ -34,6 +33,10 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info($"Skipped juice def '{def.SubtypeId}' because it has already been added");
             }
         }
+        public API.JuiceDefinition ItemBySubtypeId(string id)
+        {
+            return items_.[id];
+        }
         public void AllJuiceInInv(List<JuiceItem> readin, IMyInventory inv)
         {
             if (inv == null)
@@ -50,7 +53,7 @@ namespace Natomic.DeadlyAccel
                 if (item.Content.TypeId.ToString() == CANISTER_TYPE_ID && items_.ContainsKey(stype_id))
                 {
                     var juice_def = items_[stype_id];
-                    readin.Add(new JuiceItem { Inv = inv_rel, Canister = item, JuiceDef = juice_def });
+                    readin.Add(new JuiceItem { Canister = item, JuiceDef = juice_def });
                 }
             }
         }

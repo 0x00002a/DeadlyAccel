@@ -16,19 +16,23 @@ namespace Natomic.DeadlyAccel
 {
     class PlayerManager
     {
+        class PlayerData
+        {
+            public int iframes = 0;
+            public double toxicity_buildup = 0.0;
+            public double lowest_toxic_decay = 0.0;
+        }
+
         public Dictionary<string, float> CushioningMultipliers;
 
-        public Action<double> OnApplyDamage;
-        public Action OnSkipDamage;
-
-        private readonly Dictionary<IMyPlayer, int> iframes_ = new Dictionary<IMyPlayer, int>();
         private const int IFRAME_MAX = 3;
         private const double TOXICITY_CUTOFF = 100.0;
 
         public readonly JuiceTracker JuiceManager = new JuiceTracker();
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
-        private readonly Dictionary<IMyPlayer, double> toxicity_buildups_ = new Dictionary<IMyPlayer, double>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
+        private readonly Dictionary<IMyPlayer, PlayerData> players_lookup_ = new Dictionary<IMyPlayer, PlayerData>();
+        private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
@@ -72,38 +76,27 @@ namespace Natomic.DeadlyAccel
             var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
             return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
         }
-        public double CurrToxicBuildup()
+        public void DeregisterPlayer()
         {
-            double toxic_lvl;
-            if (!toxicity_buildups_.TryGetValue(player, out toxic_lvl))
-            {
-                toxic_lvl = 0;
-            }
-            return toxic_lvl;
+
         }
-        private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def)
+        public double ToxicBuildupFor(IMyPlayer player)
         {
-            var toxicity = CurrToxicBuildup(); // Have to create it first
-            toxicity_buildups_[player] = toxicity + def.ToxicityPerMitagated * units_used;
+            return players_lookup_[player].toxicity_buildup;
         }
-        private JuiceItem? CurrJuiceItem()
+        private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
         {
-            var parent = player?.Character?.Parent as IMyCubeBlock;
-            var inv = parent?.GetInventory();
-            var parentGrid = parent?.CubeGrid;
-            var juice_max = parentGrid != null ? JuiceManager.MaxLevelJuiceInInv(inv) : null;
-            return juice_max;
+            data.toxicity_buildup += def.ToxicityPerMitagated * units_used;
+            data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
+        }
+        
+
+        private void ApplyToxicityDecay(PlayerData data)
+        {
+            data.toxicity_buildup -= data.lowest_toxic_decay;
         }
 
-        private void ApplyToxicityDecay(double curr, API.JuiceDefinition def)
-        {
-            var buildup = curr - def.ToxicityDecay;
-            if (buildup >= 0)
-            {
-                toxicity_buildups_[player] = buildup;
-            }
-        }
-        private double CalcAccelDamage(IMyCubeBlock parent, JuiceItem? curr_juice, float accel, Settings settings)
+        private double CalcAccelDamage(IMyCubeBlock parent, float accel, Settings settings)
         {
             var cushionFactor = 0f;
 
@@ -116,7 +109,6 @@ namespace Natomic.DeadlyAccel
                 var rem_accel = (accel - settings.SafeMaximum);
                 var dmg = Math.Pow(rem_accel, settings.DamageScaleBase);
                 dmg *= (1 - cushionFactor);
-                dmg *= JuiceDmgReductionCoefficent(rem_accel, curr_juice);
                 return dmg;
 
             }
@@ -192,27 +184,21 @@ namespace Natomic.DeadlyAccel
                 return false;
             }
         }
-        private bool PlayerHasJuice(IMyCharacter character)
+        
+        private int CurrIFrames(IMyPlayer player)
         {
-            return character.GetInventory().ContainItems(1, VRage.Game.ModAPI.Ingame.MyItemType.MakeComponent("NI_JuiceLvl_1"));
+            var data = players_lookup_[player];
+            return data.iframes;
         }
-        private int CurrIFrames()
+        private double ApplyJuice(double dmg, PlayerData data, List<JuiceItem> candidates, IMyInventory inv)
         {
-            int frames;
-            if (!iframes_.TryGetValue(player, out frames))
-            {
-                frames = 0;
-            }
-            return frames;
-        }
-        private double ApplyJuice(double dmg, List<JuiceItem> candidates)
-        {
-            var toxicity = CurrToxicBuildup();
-            if (toxicity >= TOXICITY_CUTOFF)
+            if (data.toxicity_buildup >= TOXICITY_CUTOFF)
             {
                 Log.Game.Debug("player has too much toxicity, skipping juice reduction");
                 return dmg;
             }
+
+            candidates.SortNoAlloc((lhs, rhs) => lhs.JuiceDef.Ranking.CompareTo(rhs.JuiceDef.Ranking));
 
 
             var i = 0;
@@ -228,50 +214,48 @@ namespace Natomic.DeadlyAccel
                 {
                     ++i;
                 }
-                item.Inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
-                ApplyToxicBuildup((float)units_used, item.JuiceDef);
+                inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
+                ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
             }
             return dmg;
         }
-        private void RegisterInvEvents()
+        
+        private bool UpdateIframes(PlayerData data, IMyEntity standing_on)
         {
-
-        }
-        private bool UpdateIframes(IMyPlayer player, IMyEntity standing_on)
-        {
-
-            var curr_frames = CurrIFrames();
             if (standing_on != null)
             {
-                curr_frames = IFRAME_MAX;
+                data.iframes = IFRAME_MAX;
             }
-            if (curr_frames <= 0 || standing_on != null)
+            if (data.iframes <= 0 || standing_on != null)
             {
                 return true;
             }
-            else if (curr_frames > 0)
+            else if (data.iframes > 0)
             {
-                curr_frames--;
+                data.iframes--;
             }
-            iframes_[player] = curr_frames;
             return false;
-
-
         }
-        private void ApplyDamage(IMyPlayer player, float accel)
+        private double CalcTotalDmg(IMyPlayer player, float accel, Settings settings)
         {
             var parent = player.Character.Parent as IMyCubeBlock;
-          /*  var dmg = CalcAccelDamage(parent, juice, accel, settings);
-            dmg = ApplyJuice(juice, dmg);
+            inv_item_cache_.Clear();
+            JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
+            
 
-            if (dmg > 0)
+            var dmg = CalcAccelDamage(parent, accel, settings);
+            dmg = ApplyJuice(dmg, players_lookup_[player], inv_item_cache_, parent.GetInventory());
+            return dmg;
+        }
+        private void RegisterPlayer(IMyPlayer p)
+        {
+            if (!players_lookup_.ContainsKey(p))
             {
-                OnApplyDamage?.Invoke(dmg);
-                return;
-            }*/
+                players_lookup_.Add(p, new PlayerData());
+            }
         }
 
-        public void Update(IMyPlayer player, Settings settings)
+        public double Update(IMyPlayer player, Settings settings)
         {
             try
             {
@@ -279,7 +263,7 @@ namespace Natomic.DeadlyAccel
                 {
                     // In MP, player references can be null when joining 
                     //Log.Game.Debug("Skipped player because null, is someone joining?");
-                    return;
+                    return 0.0;
                 }
                 if (!player.Character.IsDead
                     && player.Character.Parent != null
@@ -287,37 +271,37 @@ namespace Natomic.DeadlyAccel
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
+                    RegisterPlayer(player);
+
+
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
                     var gridOn = GridStandingOn(player.Character); // This is expensive!
-                    var iframe_protected = UpdateIframes(player, gridOn);
-                    if (iframe_protected)
+                    var iframe_protected = UpdateIframes(players_lookup_[player], gridOn);
+                    if (!iframe_protected)
                     {
-                        return;
-                    }
-                    if (gridOn != null)
-                    {
-                        accel = EntityAccel(gridOn);
-                    }
-                    ApplyDamage(player, accel);
 
-
-                    /*   if (juice != null)
-                       {
-                           ApplyToxicityDecay(CurrToxicBuildup(), ((JuiceItem)juice).JuiceDef);
-                       }*/
+                        if (gridOn != null)
+                        {
+                            accel = EntityAccel(gridOn);
+                        }
+                        return CalcTotalDmg(player, accel, settings);
+                    }
 
                 }
-                else
+
+                if (players_lookup_.ContainsKey(player))
                 {
-                    OnSkipDamage?.Invoke();
+                    ApplyToxicityDecay(players_lookup_[player]);
                 }
-
+                return 0.0;
             }
             catch (Exception e)
             {
                 Log.Game.Error($"Failed to update player: '{player?.IdentityId}'");
                 Log.Game.Error(e);
             }
+
+            return 0.0;
         }
     }
 }
