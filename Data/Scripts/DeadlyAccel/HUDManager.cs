@@ -87,6 +87,39 @@ namespace Natomic.DeadlyAccel
         private HudAPIv2.HUDMessage widget_;
 
     }
+    class FlashingHandler<T> where T: HudAPIv2.MessageBase
+    {
+        public bool Flashing;
+        public int IntervalTicks; // Ticks per switch 
+        public T Widget;
+
+        private int ticks_since_switch_ = 0;
+
+
+        void Init(T widget)
+        {
+            Widget = widget;
+        }
+        void Draw()
+        {
+            if (Flashing)
+            {
+                if (ticks_since_switch_ >= IntervalTicks)
+                {
+                    ticks_since_switch_ = 0;
+                    Widget.Visible = !Widget.Visible;
+                } else
+                {
+                    ++ticks_since_switch_;
+                }
+
+            } else
+            {
+                ticks_since_switch_ = 0;
+            }
+        }
+
+    }
     class ProgressBar
     {
         private int progress_;
@@ -126,9 +159,55 @@ namespace Natomic.DeadlyAccel
 
     class HUDManager
     {
+        private class ToxicityHUD
+        {
+            private int toxicity_;
+            public int Toxicity { get { return toxicity_; } set { toxicity_ = value; UpdateToxicityColor(); } }
+            private MyStringId HAZZARD_00 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_0");
+            private MyStringId HAZZARD_20 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_20");
+            private MyStringId HAZZARD_60 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_60");
+            private MyStringId HAZZARD_80 = MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol_80");
+
+            private void UpdateToxicityColor()
+            {
+                if (toxicity_levels_ != null)
+                { 
+                    var draw = toxicity_ > 0;
+
+                    toxicity_levels_.Visible = draw;
+                    toxicity_lbl_.Visible = draw;
+
+
+                    if (draw)
+                    {
+                        var new_mat = toxicity_ > 80 ? HAZZARD_80 : toxicity_ > 60 ? HAZZARD_60 : toxicity_ > 20 ? HAZZARD_20 : HAZZARD_00;
+                        toxicity_levels_.Material = new_mat;
+                        toxicity_lbl_.Clear();
+                        toxicity_lbl_.Append($"{toxicity_}%");
+                    }
+                }
+            }
+            public void Init()
+            {
+                var toxicity_symbol_pos = new Vector2D(0.6, -0.8);
+                toxicity_lbl_.Init();
+
+                toxicity_levels_ = new HudAPIv2.BillBoardHUDMessage(
+                    Material: MyStringId.GetOrCompute("NI_DeadlyAccel_BiohazardSymbol"),
+                    Origin: toxicity_symbol_pos,
+                    BillBoardColor: Color.White,
+                    Width: 0.1f,
+                    Height: 0.15f
+
+                    );
+            }
+
+            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(-0.8, -0.4));
+            private HudAPIv2.BillBoardHUDMessage toxicity_levels_;
+        }
 
         public bool Enabled { get; }
-        public double ToxicityLevels;
+        public double ToxicityLevels { set { toxicity_handler_.Toxicity = (int)value; } }
         public MyStringId ACCEL_WARNING_MAT = MyStringId.GetOrCompute("NI_DeadlyAccel_AccelWarning");
 
         public void Init()
@@ -139,16 +218,14 @@ namespace Natomic.DeadlyAccel
         {
             accel_warn_ = new HudAPIv2.BillBoardHUDMessage(
                 Material: ACCEL_WARNING_MAT,
-                Origin: new Vector2D(0, 0.3),
+                Origin: new Vector2D(0, 0.8),
                 BillBoardColor: Color.White,
                 Width: 0.15f,
                 Height: 0.25f
 
                 );
+            toxicity_handler_.Init();
 
-            toxicity_levels_.Init();
-            toxicity_lbl_.Init();
-            toxicity_lbl_.Append("Toxicity");
 
             hud_initialised_ = true;
         }
@@ -171,15 +248,17 @@ namespace Natomic.DeadlyAccel
         {
             if (hud_initialised_)
             {
+                toxicity_handler_.Toxicity = 90;
+                /*toxicity_handler_
                 toxicity_levels_.Progress = 100;//MathHelper.CeilToInt(ToxicityLevels);
                 toxicity_lbl_.Visible = toxicity_levels_.Progress > 0;
-                toxicity_levels_.Draw();
+                toxicity_levels_.Draw();*/
             }
         }
 
+
+        private ToxicityHUD toxicity_handler_ = new ToxicityHUD();
         private HudAPIv2.BillBoardHUDMessage accel_warn_;
-        private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8, 0.9));
-        private ProgressBar toxicity_levels_ = new ProgressBar(new Vector2D(0.8, 0.7), 4);
         private HudAPIv2 api_handle_;
         private bool hud_initialised_ = false;
 
