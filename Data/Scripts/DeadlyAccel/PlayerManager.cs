@@ -31,7 +31,7 @@ namespace Natomic.DeadlyAccel
         public readonly JuiceTracker JuiceManager = new JuiceTracker();
         private readonly List<RayTraceHelper.RayInfo> rays_cache_ = new List<RayTraceHelper.RayInfo>();
         private readonly RayTraceHelper ray_tracer_ = new RayTraceHelper();
-        private readonly Dictionary<IMyPlayer, PlayerData> players_lookup_ = new Dictionary<IMyPlayer, PlayerData>();
+        private readonly Dictionary<long, PlayerData> players_lookup_ = new Dictionary<long, PlayerData>();
         private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
         #region Accel calculations
@@ -149,11 +149,7 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Misc invincibility
-        private int CurrIFrames(IMyPlayer player)
-        {
-            var data = players_lookup_[player];
-            return data.iframes;
-        }
+        
         private bool UpdateIframes(PlayerData data, IMyEntity standing_on)
         {
             if (standing_on != null)
@@ -207,7 +203,7 @@ namespace Natomic.DeadlyAccel
         #region Toxicity tracking
         public double ToxicBuildupFor(IMyPlayer player)
         {
-            return players_lookup_[player].toxicity_buildup;
+            return players_lookup_[player.IdentityId].toxicity_buildup;
         }
         private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
         {
@@ -252,7 +248,7 @@ namespace Natomic.DeadlyAccel
 
 
             var dmg = CalcAccelDamage(parent, accel, settings);
-            dmg = ApplyJuice(dmg, players_lookup_[player], inv_item_cache_, parent.GetInventory());
+            dmg = ApplyJuice(dmg, players_lookup_[player.IdentityId], inv_item_cache_, parent.GetInventory());
             return dmg;
         }
 
@@ -266,18 +262,20 @@ namespace Natomic.DeadlyAccel
                     //Log.Game.Debug("Skipped player because null, is someone joining?");
                     return 0.0;
                 }
+
+                var pid = player.IdentityId;
                 if (!player.Character.IsDead
                     && player.Character.Parent != null
                     && !(settings.IgnoreJetpack && AccelNotDueToJetpack(player.Character))
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
-                    RegisterPlayer(player);
+                    RegisterPlayer(pid);
 
 
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
                     var gridOn = GridStandingOn(player.Character); // This is expensive!
-                    var iframe_protected = UpdateIframes(players_lookup_[player], gridOn);
+                    var iframe_protected = UpdateIframes(players_lookup_[pid], gridOn);
                     if (!iframe_protected)
                     {
 
@@ -290,9 +288,9 @@ namespace Natomic.DeadlyAccel
 
                 }
 
-                if (players_lookup_.ContainsKey(player))
+                if (players_lookup_.ContainsKey(pid))
                 {
-                    ApplyToxicityDecay(players_lookup_[player]);
+                    ApplyToxicityDecay(players_lookup_[pid]);
                 }
                 return 0.0;
             }
@@ -307,16 +305,16 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Player tracking
-        private void RegisterPlayer(IMyPlayer p)
+        private void RegisterPlayer(long id)
         {
-            if (!players_lookup_.ContainsKey(p))
+            if (!players_lookup_.ContainsKey(id))
             {
-                players_lookup_.Add(p, new PlayerData());
+                players_lookup_.Add(id, new PlayerData());
             }
         }
-        public void DeregisterPlayer()
+        public void DeregisterPlayer(long id)
         {
-
+            players_lookup_.Remove(id);
         }
         #endregion
     }

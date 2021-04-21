@@ -258,6 +258,7 @@ namespace Natomic.DeadlyAccel
         public void OnPlayerDC(long playerId)
         {
             player_cache_.Remove(playerId);
+            player_.DeregisterPlayer(playerId);
             Log.Game.Info($"Player disconnected: {playerId}");
         }
         public static string FormatCushionLookup(string typeid, string subtypeid)
