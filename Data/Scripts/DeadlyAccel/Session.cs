@@ -41,7 +41,7 @@ namespace Natomic.DeadlyAccel
     // The MyUpdateOrder arg determines what update overrides are actually called.
     // Remove any method that you don't need, none of them are required, they're only there to show what you can use.
     // Also remove all comments you've read to avoid the overload of comments that is this file.
-    [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation | MyUpdateOrder.AfterSimulation)]
+    [MySessionComponentDescriptor(MyUpdateOrder.BeforeSimulation | MyUpdateOrder.AfterSimulation, 2)]
     public class DeadlyAccelSession : MySessionComponentBase
     {
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
@@ -49,7 +49,7 @@ namespace Natomic.DeadlyAccel
         private const ushort ComChannelId = 15128;
         public const string ModName = "Deadly Acceleration";
 
-        private int tick = 0;
+        private ulong tick = 0;
         private bool players_need_update_ = false;
         private const int TICKS_PER_CACHE_UPDATE = 120;
 
@@ -122,6 +122,7 @@ namespace Natomic.DeadlyAccel
             }
             InitPlayerManager();
             InitPlayerEvents();
+            InitAPI();
         }
         private void InitLogger()
         {
@@ -139,16 +140,12 @@ namespace Natomic.DeadlyAccel
         }
         private void InitAPI()
         {
-
-            if (MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer)
-            {
-                var apiHooks = new Dictionary<string, Func<object, bool>>()
+            var apiHooks = new Dictionary<string, Func<object, bool>>()
             {
                 {"RegisterJuice", RegisterJuice}
             };
 
-                MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
-            }
+            MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
         }
         private void InitNetwork()
         {
@@ -176,8 +173,6 @@ namespace Natomic.DeadlyAccel
                 }
             };
             
-            InitAPI();
-
         }
         private void InitPlayerManager()
         {
@@ -357,6 +352,7 @@ namespace Natomic.DeadlyAccel
             // executed every tick, 60 times a second, after physics simulation and only if game is not paused.
 
             ++tick;
+
             try
             // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
