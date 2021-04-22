@@ -184,10 +184,13 @@ namespace Natomic.DeadlyAccel
             while (dmg > 0 && i < candidates.Count)
             {
                 var item = candidates[i];
-                var units_needed = dmg / 1;
+                var units_needed = dmg * item.JuiceDef.ConsumptionRate;
                 var units_used = Math.Min((double)item.Canister.Amount, units_needed);
 
-                dmg -= units_used / 1;
+                if (item.JuiceDef.ConsumptionRate > 0)
+                {
+                    dmg -= units_used / item.JuiceDef.ConsumptionRate;
+                }
 
                 if (units_used == (double)item.Canister.Amount)
                 {    
