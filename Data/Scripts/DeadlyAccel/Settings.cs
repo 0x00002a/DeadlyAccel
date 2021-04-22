@@ -38,18 +38,22 @@ namespace Natomic.DeadlyAccel
             [ProtoMember(3)]
             public float CushionFactor;
         }
-        [ProtoContract]
-        public struct JuiceValue
-        {
-            [ProtoMember(1)]
-            public string SubtypeId;
-            [ProtoMember(2)]
-            public float SafePointIncrease;
-        }
+        
         private const string Filename = "DeadlyAccel.cfg";
 
         [ProtoMember(1)]
-        public List<CusheningEntry> CushioningBlocks;
+        public List<CusheningEntry> CushioningBlocks
+        {
+            get
+            {
+                if (cushening_entries_ == null)
+                {
+                    cushening_entries_ = new List<CusheningEntry>();
+                }
+                return cushening_entries_;
+            }
+            set { cushening_entries_ = value; }
+        }
 
         [ProtoMember(2)]
         public bool IgnoreJetpack; // Whether acceleration due to jetpacks should be ignored 
@@ -61,16 +65,30 @@ namespace Natomic.DeadlyAccel
         public float DamageScaleBase;
 
         [ProtoMember(5)]
-        public List<string> IgnoredGridNames; // List of grids to ignore damage from 
+        public List<string> IgnoredGridNames
+        {
+            get
+            {
+                if (ignored_grid_names_ == null)
+                {
+                    ignored_grid_names_ = new List<string>();
+                }
+                return ignored_grid_names_;
+            }
+            set { ignored_grid_names_ = value; }
+        } // List of grids to ignore damage from 
 
         [ProtoMember(6)]
         public bool IgnoreRespawnShips; // Whether to ignore grids where IsRespawn == true
 
         [ProtoIgnore]
-        public static int CurrentVersionNumber = 2;
+        public const int CurrentVersionNumber = 2; // Increases on breaking changes
 
-        [ProtoIgnore]
-        public int VersionNumber = CurrentVersionNumber - 1; // Increases on breaking changes. Defaults to last version number
+        [ProtoMember(7)]
+        public int VersionNumber;
+
+        internal List<string> ignored_grid_names_;
+        internal List<CusheningEntry> cushening_entries_;
 
         public override string ToString()
         {

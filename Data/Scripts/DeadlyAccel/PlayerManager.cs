@@ -203,11 +203,18 @@ namespace Natomic.DeadlyAccel
         #region Toxicity tracking
         public double ToxicBuildupFor(IMyPlayer player)
         {
-            return players_lookup_[player.IdentityId].toxicity_buildup;
+            if (players_lookup_.ContainsKey(player.IdentityId))
+            {
+                return players_lookup_[player.IdentityId].toxicity_buildup;
+            } else
+            {
+                return 0.0;
+            }
         }
         private void ApplyToxicBuildup(float units_used, API.JuiceDefinition def, PlayerData data)
         {
             data.toxicity_buildup += def.ToxicityPerMitagated * units_used;
+            data.toxicity_buildup = Math.Min(data.toxicity_buildup, 100);
             if (data.lowest_toxic_decay > 0)
             {
                 data.lowest_toxic_decay = Math.Min(def.ToxicityDecay, data.lowest_toxic_decay);
@@ -245,7 +252,6 @@ namespace Natomic.DeadlyAccel
         }
 
         #endregion
-
         #region Control/top level 
         private double CalcTotalDmg(IMyPlayer player, float accel, Settings settings)
         {

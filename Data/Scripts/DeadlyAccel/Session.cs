@@ -95,7 +95,6 @@ namespace Natomic.DeadlyAccel
             }
         }
 
-
         public override void LoadData()
         {
             // amogst the earliest execution points, but not everything is available at this point.
@@ -160,21 +159,23 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), false, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
                 Log.Game.Info("Initialised command handler");
             }
-            if (IsClient)
+            Log.Game.Info($"Loaded settings: {net_settings_.Value}");
+            net_settings_.ValueChangedByNetwork += (old, curr, id) =>
             {
-                net_settings_.Fetch();
-            }
-            else
-            {
-                net_settings_.Push();
-            }
+                if (!old.ValidAgainst(curr))
+                {
+                    Log.Game.Error($"Got send invalid settings: {curr}, reverting to current");
+                    net_settings_.SetValue(old);
+                }
+            };
+            
             InitAPI();
 
         }
@@ -360,7 +361,7 @@ namespace Natomic.DeadlyAccel
             // example try-catch for catching errors and notifying player, use only for non-critical code!
             {
                 // ...
-                if (players_need_update_ || IsSP && player_cache_.Count == 0)
+                if (players_need_update_ || ((IsSP || IsClient) && player_cache_.Count == 0))
                 {
                     UpdatePlayersCache(); // Check every tick till we find something
                     players_need_update_ = false;
