@@ -211,8 +211,72 @@ namespace Natomic.DeadlyAccel
             private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8745, -0.497));
             private FlashController<HudAPIv2.BillBoardHUDMessage> toxicity_levels_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         }
+        private class BottlesHUD
+        {
+
+            public void Init()
+            {
+                fill_lvl_lbl_.Init();
+                fill_lvl_icon_ = new HudAPIv2.BillBoardHUDMessage(
+                    BillBoardColor: Color.White,
+                    Origin: FILL_LVL_LOCATION,
+                    Material: MyStringId.GetOrCompute("NI_DeadlyAccel_FillLevel"),
+                    Scale: 0.2
+                    );
+                fill_mulitplier_lbl_.Init();
+            }
+            private void UpdateAval()
+            {
+                bool draw = curr_juice_aval_cache_ == 0;
+                fill_lvl_icon_.Visible = draw;
+                fill_lvl_lbl_.Visible = draw;
+
+                var percent = curr_juice_aval_cache_ % 100;
+                if (percent == 0 && curr_juice_aval_cache_ != 0)
+                {
+                    percent = 100;
+                }
+                var multiplier = (int)(curr_juice_aval_cache_ / 100);
+                fill_mulitplier_lbl_.Visible = draw && multiplier > 1;
+                if (draw && multiplier > 1)
+                {
+                    fill_mulitplier_lbl_.Clear();
+                    fill_mulitplier_lbl_.Append($"x{multiplier}");
+                }
+
+                fill_lvl_lbl_.Clear();
+                fill_lvl_lbl_.Append($"{percent}%");
+
+            }
+
+            private double curr_juice_aval_cache_ = 0;
+
+            public double CurrJuiceAvalPercent {
+                set
+                {
+                    if (fill_lvl_icon_ != null && value != curr_juice_aval_cache_)
+                    {
+                        curr_juice_aval_cache_ = value;
+                        UpdateAval();
+                    }
+                }
+                }
+
+            public static Vector2D FILL_LVL_LOCATION = new Vector2D(0.875, -0.4);
+            public HudAPIv2.BillBoardHUDMessage fill_lvl_icon_;
+            public TextLabel fill_mulitplier_lbl_ = new TextLabel(FILL_LVL_LOCATION + new Vector2D(0.1, 0));
+            public TextLabel fill_lvl_lbl_ = new TextLabel(FILL_LVL_LOCATION);
+        }
 
         public bool Enabled { get; }
+
+        public double CurrJuiceAvalPercent
+        {
+            set
+            {
+                bottle_handler_.CurrJuiceAvalPercent = value;
+            }
+        }
         public double ToxicityLevels
         {
             set
@@ -254,11 +318,14 @@ namespace Natomic.DeadlyAccel
                 }
             }
         }
+        public HUDManager()
+        {
+            accel_warn_.Flashing = false;
+            accel_warn_.IntervalTicks = 20;
+        }
         public void Init()
         {
             api_handle_ = new HudAPIv2(OnHudInit);
-            accel_warn_.IntervalTicks = 20;
-            accel_warn_.Flashing = false;
         }
         private void OnHudInit()
         {
@@ -271,6 +338,7 @@ namespace Natomic.DeadlyAccel
                 Height: 0.25f
                 ));
             toxicity_handler_.Init();
+            bottle_handler_.Init();
 
             hud_initialised_ = true;
         }
@@ -307,6 +375,7 @@ namespace Natomic.DeadlyAccel
 
 
         private ToxicityHUD toxicity_handler_ = new ToxicityHUD();
+        private BottlesHUD bottle_handler_ = new BottlesHUD();
         private FlashController<HudAPIv2.BillBoardHUDMessage> accel_warn_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         private HudAPIv2 api_handle_;
         private bool hud_initialised_ = false;
