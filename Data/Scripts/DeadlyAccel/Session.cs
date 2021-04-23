@@ -127,6 +127,11 @@ namespace Natomic.DeadlyAccel
 
             storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
             MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
+
+            if (IsClient || IsSP)
+            {
+                player_.OnJuiceAvalChanged += aval => hud.CurrJuiceAvalPercent = aval * 100.0;
+            }
         }
         private void InitLogger()
         {

@@ -164,7 +164,7 @@ namespace Natomic.DeadlyAccel
 
             public bool EmergencyMode => Toxicity >= 95;
 
-            public Vector2D ICON_NORMAL_POS = new Vector2D(0.875, -0.42);
+            public Vector2D ICON_NORMAL_POS = new Vector2D(0.845, -0.42);
 
             public HudAPIv2.BillBoardHUDMessage Icon => toxicity_levels_.Widget;
 
@@ -208,11 +208,14 @@ namespace Natomic.DeadlyAccel
                 toxicity_levels_.Widget.Visible = false;
             }
 
-            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8745, -0.497));
+            private TextLabel toxicity_lbl_ = new TextLabel(new Vector2D(0.8445, -0.497));
             private FlashController<HudAPIv2.BillBoardHUDMessage> toxicity_levels_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         }
         private class BottlesHUD
         {
+            private static MyStringId FILL_LEVEL_20 = MyStringId.GetOrCompute("NI_DeadlyAccel_FillLevel_20");
+            private static MyStringId FILL_LEVEL_50 = MyStringId.GetOrCompute("NI_DeadlyAccel_FillLevel_50");
+            private static MyStringId FILL_LEVEL_100 = MyStringId.GetOrCompute("NI_DeadlyAccel_FillLevel_100");
 
             public void Init()
             {
@@ -220,14 +223,17 @@ namespace Natomic.DeadlyAccel
                 fill_lvl_icon_ = new HudAPIv2.BillBoardHUDMessage(
                     BillBoardColor: Color.White,
                     Origin: FILL_LVL_LOCATION,
-                    Material: MyStringId.GetOrCompute("NI_DeadlyAccel_FillLevel"),
-                    Scale: 0.2
+                    Material: FILL_LEVEL_100,
+                    Scale: 0.2,
+                    Width: 0.8f
                     );
+                fill_lvl_icon_.Visible = false;
                 fill_mulitplier_lbl_.Init();
+                fill_mulitplier_lbl_.Scale = 1.2;
             }
             private void UpdateAval()
             {
-                bool draw = curr_juice_aval_cache_ == 0;
+                bool draw = curr_juice_aval_cache_ != 0;
                 fill_lvl_icon_.Visible = draw;
                 fill_lvl_lbl_.Visible = draw;
 
@@ -236,16 +242,20 @@ namespace Natomic.DeadlyAccel
                 {
                     percent = 100;
                 }
+
+                fill_lvl_icon_.Material = percent <= 20 ? FILL_LEVEL_20 : percent <= 50 ? FILL_LEVEL_50 : FILL_LEVEL_100;
+
                 var multiplier = (int)(curr_juice_aval_cache_ / 100);
-                fill_mulitplier_lbl_.Visible = draw && multiplier > 1;
-                if (draw && multiplier > 1)
+                var draw_multiplier = draw && multiplier >= 1;
+                fill_mulitplier_lbl_.Visible = draw_multiplier;
+                if (draw_multiplier)
                 {
                     fill_mulitplier_lbl_.Clear();
-                    fill_mulitplier_lbl_.Append($"x{multiplier}");
+                    fill_mulitplier_lbl_.Append($"+ {multiplier}");
                 }
 
                 fill_lvl_lbl_.Clear();
-                fill_lvl_lbl_.Append($"{percent}%");
+                fill_lvl_lbl_.Append($"{Math.Round(percent, 2)}%");
 
             }
 
@@ -262,7 +272,7 @@ namespace Natomic.DeadlyAccel
                 }
                 }
 
-            public static Vector2D FILL_LVL_LOCATION = new Vector2D(0.875, -0.4);
+            public static Vector2D FILL_LVL_LOCATION = new Vector2D(0.845, -0.3);
             public HudAPIv2.BillBoardHUDMessage fill_lvl_icon_;
             public TextLabel fill_mulitplier_lbl_ = new TextLabel(FILL_LVL_LOCATION + new Vector2D(0.1, 0));
             public TextLabel fill_lvl_lbl_ = new TextLabel(FILL_LVL_LOCATION);

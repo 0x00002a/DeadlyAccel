@@ -34,6 +34,9 @@ namespace Natomic.DeadlyAccel
         private readonly Dictionary<long, PlayerData> players_lookup_ = new Dictionary<long, PlayerData>();
         private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
+        public event Action<double> OnJuiceAvalChanged;
+        
+
         #region Accel calculations
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
         {
@@ -181,6 +184,7 @@ namespace Natomic.DeadlyAccel
 
 
             var i = 0;
+            double aval = 0;
             while (dmg > 0 && i < candidates.Count)
             {
                 var item = candidates[i];
@@ -196,9 +200,11 @@ namespace Natomic.DeadlyAccel
                 {    
                     ++i;        
                 }
+                OnJuiceAvalChanged?.Invoke((double)item.Canister.Amount - units_used);
                 inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
                 ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
             }
+
             return dmg;
         }
 
@@ -318,6 +324,10 @@ namespace Natomic.DeadlyAccel
                 if (players_lookup_.ContainsKey(pid))
                 {
                     ApplyToxicityDecay(players_lookup_[pid]);
+                }
+                if (player?.Character?.Parent == null)
+                {
+                    OnJuiceAvalChanged?.Invoke(0);
                 }
                 return 0.0;
             }
