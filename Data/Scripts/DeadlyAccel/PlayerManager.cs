@@ -196,7 +196,7 @@ namespace Natomic.DeadlyAccel
                 {    
                     ++i;        
                 }
-                inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)(units_used * item.JuiceDef.ConsumptionRate));
+                inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
                 ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
             }
             return dmg;
