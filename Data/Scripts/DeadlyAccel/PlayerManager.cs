@@ -227,8 +227,13 @@ namespace Natomic.DeadlyAccel
             }
         }
 
+        public void ApplyToxicityDecay(long pid, float multiplier)
+        {
+            var data = players_lookup_[pid];
+            data.toxicity_buildup = Math.Max(data.toxicity_buildup - data.lowest_toxic_decay * multiplier, 0);
+        }
 
-        private void ApplyToxicityDecay(PlayerData data)
+       private void ApplyToxicityDecay(PlayerData data)
         {
             data.toxicity_buildup -= data.lowest_toxic_decay;
             data.toxicity_buildup = Math.Max(data.toxicity_buildup, 0);

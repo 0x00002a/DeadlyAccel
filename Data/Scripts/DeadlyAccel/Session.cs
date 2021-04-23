@@ -60,6 +60,7 @@ namespace Natomic.DeadlyAccel
         private Net.NetSync<Settings> net_settings_;
         private HUDManager hud = null; // Only non-null if not server
         private readonly ChatHandler cmd_handler_ = new ChatHandler();
+        PlayerHealthRechargeEvent storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
 
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
@@ -123,6 +124,9 @@ namespace Natomic.DeadlyAccel
             InitPlayerManager();
             InitPlayerEvents();
             InitAPI();
+
+            storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
+            MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
         }
         private void InitLogger()
         {
@@ -131,6 +135,23 @@ namespace Natomic.DeadlyAccel
             game.Add(new FileLog { ModName = ModName });
 
             Log.UI.Add(new LogFilter { MaxLogLevel = LogType.Error, Sink = new ChatLog { ModName = ModName } });
+
+        }
+        private void OnPlayerHealthRecharge(long pid, int type, float amount)
+        {
+            //Log.Game.Debug($"Player: {pid} healing via medbay: {type}");
+
+            float toxic_decay_multiplier = 100;
+            switch(type)
+            {
+                case 1: // Medbay
+                    toxic_decay_multiplier = 100;
+                    break;
+                case 0: // Survival kit
+                    toxic_decay_multiplier = 25;
+                    break;
+            }
+            player_.ApplyToxicityDecay(pid, toxic_decay_multiplier);
         }
         private void InitPlayerEvents()
         {
@@ -283,6 +304,7 @@ namespace Natomic.DeadlyAccel
             Instance = null; // important for avoiding this object to remain allocated in memory
             MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
             MyVisualScriptLogicProvider.PlayerDisconnected -= OnPlayerDC;
+            MyVisualScriptLogicProvider.PlayerHealthRecharging -= storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
 
 
         }
