@@ -283,16 +283,17 @@ namespace Natomic.DeadlyAccel
         {
             public void Init()
             {
-                lbl_.Init();
+                lbl_ = new HudAPIv2.HUDMessage(Message: lbl_txt_, Origin: DRAW_POS);
             }
             public void Update<T>(T obj)
             {
-                lbl_.Clear();
-                lbl_.Append(MyAPIGateway.Utilities.SerializeToXML<T>(obj));
+                lbl_txt_.Clear();
+                lbl_txt_.Append(MyAPIGateway.Utilities.SerializeToXML<T>(obj));
             }
 
-            public static Vector2D DRAW_POS = new Vector2D(-0.97, 0.6);
-            public TextLabel lbl_ = new TextLabel(DRAW_POS);
+            public static Vector2D DRAW_POS = new Vector2D(-0.7, 0.6);
+            public HudAPIv2.HUDMessage lbl_;
+            public StringBuilder lbl_txt_ = new StringBuilder();
         }
 
         public bool Enabled { get; }
@@ -372,12 +373,15 @@ namespace Natomic.DeadlyAccel
 
         public void UpdateDebugDraw<T>(T obj)
         {
-            if (debug_draw_ == null)
+            if (hud_initialised_)
             {
-                debug_draw_ = new DebugHUD();
-                debug_draw_.Init();
+                if (debug_draw_ == null)
+                {
+                    debug_draw_ = new DebugHUD();
+                    debug_draw_.Init();
+                }
+                debug_draw_.Update(obj);
             }
-            debug_draw_.Update(obj);
         }
 
         public void ShowWarning()

@@ -487,7 +487,7 @@ namespace Natomic.DeadlyAccel
 
                     if (debug_enabled_ && hud != null && MyAPIGateway.Session.Player != null)
                     {
-                        hud.UpdateDebugDraw(MyAPIGateway.Session.Player.IdentityId);
+                        hud.UpdateDebugDraw(player_.DataForPlayer(MyAPIGateway.Session.Player.IdentityId));
                     }
                 }
 
