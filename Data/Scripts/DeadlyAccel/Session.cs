@@ -62,6 +62,9 @@ namespace Natomic.DeadlyAccel
         private readonly ChatHandler cmd_handler_ = new ChatHandler();
         PlayerHealthRechargeEvent storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
 
+        private const string ACCEL_WARNING_UPDATE = "aclwarn";
+        private const string TOXIC_UPDATE = "utoxic";
+
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
 
@@ -124,15 +127,17 @@ namespace Natomic.DeadlyAccel
             InitPlayerManager();
             InitPlayerEvents();
             InitAPI();
-
-            storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
-            MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
-
             if (IsClient || IsSP)
             {
                 player_.OnJuiceAvalChanged += aval => hud.CurrJuiceAvalPercent = aval * 100.0;
             }
+            else if (!IsClient || IsSP)
+            {
+                storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
+                MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
+            }
         }
+
         private void InitLogger()
         {
             var game = Log.Game;
@@ -144,10 +149,8 @@ namespace Natomic.DeadlyAccel
         }
         private void OnPlayerHealthRecharge(long pid, int type, float amount)
         {
-            //Log.Game.Debug($"Player: {pid} healing via medbay: {type}");
-
             float toxic_decay_multiplier = 100;
-            switch(type)
+            switch (type)
             {
                 case 1: // Medbay
                     toxic_decay_multiplier = 100;
@@ -157,6 +160,15 @@ namespace Natomic.DeadlyAccel
                     break;
             }
             player_.ApplyToxicityDecay(pid, toxic_decay_multiplier);
+            if (!IsSP)
+            {
+                var player = player_cache_[pid];
+                SendToxicUpdate(player, player_.ToxicBuildupFor(player));
+            }
+        }
+        private void SendToxicUpdate(IMyPlayer p, double t)
+        {
+            Net.NetworkAPI.Instance.SendCommand(TOXIC_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(t), steamId: p.SteamUserId);
         }
         private void InitPlayerEvents()
         {
@@ -173,6 +185,7 @@ namespace Natomic.DeadlyAccel
 
             MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
         }
+        
         private void InitNetwork()
         {
             bool net_inited = Net.NetworkAPI.IsInitialized;
@@ -188,6 +201,42 @@ namespace Natomic.DeadlyAccel
                 var net_api = Net.NetworkAPI.Instance;
                 cmd_handler_.Init(net_api, net_settings_);
                 Log.Game.Info("Initialised command handler");
+
+
+                if (IsClient) {
+                    net_api.RegisterNetworkCommand(ACCEL_WARNING_UPDATE, (sid, cmd, data, stamp) =>
+                    {
+                        try
+                        {
+                            var show_danger = MyAPIGateway.Utilities.SerializeFromBinary<bool>(data);
+                            if (show_danger)
+                            {
+                                hud.ShowWarning();
+                            } else
+                            {
+                                hud.ClearWarning();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Game.Error("Failed to deserialise accel warning msg");
+                            Log.Game.Error(e);
+                        }
+                    });
+                    net_api.RegisterNetworkCommand(TOXIC_UPDATE, (sid, cmd, data, stamp) =>
+                    {
+                        try
+                        {
+                            var new_toxic = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
+                            hud.ToxicityLevels = new_toxic;
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Game.Error("Failed to deserialise toxic update");
+                            Log.Game.Error(e);
+                        }
+                    });
+                } 
             }
             Log.Game.Info($"Loaded settings: {net_settings_.Value}");
             net_settings_.ValueChangedByNetwork += (old, curr, id) =>
@@ -348,12 +397,19 @@ namespace Natomic.DeadlyAccel
                     Log.Game.Debug("Found null player, cache out of date?");
                     needs_cache_update = true;
                 }
-                else if (!p.IsBot)
+                else if (!p.IsBot && (IsSP || !IsClient))
                 {
                     var dmg = player_.Update(p, settings_);
+                    var toxic_lvls = Math.Ceiling(player_.ToxicBuildupFor(p));
+                    if (MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer)
+                    {
+                        var net = Net.NetworkAPI.Instance;
+                        SendToxicUpdate(p, toxic_lvls);
+                        net.SendCommand(ACCEL_WARNING_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(dmg > 0), steamId: p.SteamUserId);
+                    }
                     if (hud != null)
                     {
-                        hud.ToxicityLevels = Math.Ceiling(player_.ToxicBuildupFor(p));
+                        hud.ToxicityLevels = toxic_lvls;
                     }
                     if (dmg != 0)
                     {

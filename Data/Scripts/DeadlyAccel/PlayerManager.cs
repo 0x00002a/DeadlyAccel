@@ -327,7 +327,7 @@ namespace Natomic.DeadlyAccel
                 }
                 if (player?.Character?.Parent == null)
                 {
-                    OnJuiceAvalChanged?.Invoke(0);
+                    OnJuiceAvalChanged?.Invoke(0)
                 }
                 return 0.0;
             }
