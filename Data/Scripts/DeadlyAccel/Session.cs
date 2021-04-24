@@ -499,6 +499,7 @@ namespace Natomic.DeadlyAccel
                 Log.UI.Error(e.Message);
             }
         }
+        
 
         public override void Draw()
         {
@@ -521,18 +522,22 @@ namespace Natomic.DeadlyAccel
             // executed AFTER world was saved
             if (MyAPIGateway.Multiplayer.IsServer)
             {
-                foreach(var player in player_cache_.Values)
-                {
-                    player_.SavePlayerData(player);
-                }
 
                 settings_.Save();
             }
         }
 
+
         public override MyObjectBuilder_SessionComponent GetObjectBuilder()
         {
             // executed during world save, most likely before entities.
+            if (MyAPIGateway.Multiplayer.IsServer)
+            {
+                foreach (var player in player_cache_.Values)
+                {
+                    player_.SavePlayerData(player);
+                }
+            }
 
             return base.GetObjectBuilder(); // leave as-is.
         }
