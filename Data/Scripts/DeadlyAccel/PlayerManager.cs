@@ -316,7 +316,6 @@ namespace Natomic.DeadlyAccel
 
                 var pid = player.IdentityId;
                 if (!player.Character.IsDead
-                    && player.Character.Parent != null
                     && !(settings.IgnoreJetpack && AccelNotDueToJetpack(player.Character))
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
