@@ -1,7 +1,9 @@
 ﻿using Natomic.Logging;
 using Sandbox.Game;
 using Sandbox.Game.Entities.Character.Components;
+using Sandbox.Game.EntityComponents;
 using Sandbox.Game.World;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +24,7 @@ namespace Natomic.DeadlyAccel
             public double toxicity_buildup = 0.0;
             public double lowest_toxic_decay = 0.0;
         }
+        private readonly static Guid STORAGE_GUID = new Guid("15AB8152-C66D-4064-9B5D-0F3DAE29F5F4");
 
         public Dictionary<string, float> CushioningMultipliers;
 
@@ -367,6 +370,32 @@ namespace Natomic.DeadlyAccel
         public void DeregisterPlayer(long id)
         {
             players_lookup_.Remove(id);
+        }
+        public void LoadPlayerData(IMyPlayer player)
+        {
+            if (player?.Character?.Storage == null || (!player?.Character?.Storage.ContainsKey(STORAGE_GUID) ?? true))
+            {
+                return;
+            }
+
+            players_lookup_[player.IdentityId] = MyAPIGateway.Utilities.SerializeFromXML<PlayerData>(player.Character.Storage[STORAGE_GUID]);
+        }
+
+        public void SavePlayerData(IMyPlayer player)
+        {
+            if (player?.Character == null || !players_lookup_.ContainsKey(player.IdentityId))
+            {
+                return;
+            }
+
+            var data = players_lookup_[player.IdentityId];
+
+            if (player.Character.Storage == null)
+            {
+                player.Character.Storage = new MyModStorageComponent { [STORAGE_GUID] = "" };
+            }
+            player.Character.Storage[STORAGE_GUID] = MyAPIGateway.Utilities.SerializeToXML(data);
+            
         }
         #endregion
     }

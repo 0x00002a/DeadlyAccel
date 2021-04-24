@@ -141,6 +141,7 @@ namespace Natomic.DeadlyAccel
 
                 storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
                 MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
+                MyVisualScriptLogicProvider.PlayerSpawned += OnPlayerSpawn;
             } else
             {
                 player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval * 100.0), steamId: p.SteamUserId);
@@ -156,6 +157,14 @@ namespace Natomic.DeadlyAccel
 
             Log.UI.Add(new LogFilter { MaxLogLevel = LogType.Error, Sink = new ChatLog { ModName = ModName } });
 
+        }
+       
+        private void OnPlayerSpawn(long pid)
+        {
+            if (player_cache_.ContainsKey(pid))
+            {
+                player_.LoadPlayerData(player_cache_[pid]);
+            }
         }
         private void OnPlayerHealthRecharge(long pid, int type, float amount)
         {
@@ -379,6 +388,13 @@ namespace Natomic.DeadlyAccel
             // executed when world is exited to unregister events and stuff
 
             Instance = null; // important for avoiding this object to remain allocated in memory
+            if (IsSP || MyAPIGateway.Multiplayer.IsServer)
+            {
+                foreach(var player in player_cache_.Values)
+                {
+                    player_.SavePlayerData(player);
+                }
+            }
             if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
             {
                 MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
