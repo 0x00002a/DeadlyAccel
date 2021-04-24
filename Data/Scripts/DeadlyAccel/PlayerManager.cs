@@ -292,20 +292,21 @@ namespace Natomic.DeadlyAccel
             var pdata = players_lookup_[player.IdentityId];
             var dmg = CalcAccelDamage(parent, accel, settings);
 
+            var mod_dmg = dmg;
             if (parent != null)
             {
                 inv_item_cache_.Clear();
                 JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
-                var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory(), player);
-                if (dmg == mod_dmg)
-                {
-                    // Juice not used 
-                    ApplyToxicityDecay(pdata);
-                }
-                dmg = mod_dmg;
+                mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory(), player);
+                
+            }
+            if (dmg == mod_dmg)
+            {
+                // Juice not used 
+                ApplyToxicityDecay(pdata);
             }
             
-            return dmg;
+            return mod_dmg;
         }
 
         public double Update(IMyPlayer player, Settings settings)
