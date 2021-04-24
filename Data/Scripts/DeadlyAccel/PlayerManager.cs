@@ -288,19 +288,24 @@ namespace Natomic.DeadlyAccel
         private double CalcTotalDmg(IMyPlayer player, float accel, Settings settings)
         {
             var parent = player.Character.Parent as IMyCubeBlock;
-            inv_item_cache_.Clear();
-            JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
-
 
             var pdata = players_lookup_[player.IdentityId];
             var dmg = CalcAccelDamage(parent, accel, settings);
-            var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory(), player);
-            if (dmg == mod_dmg)
+
+            if (parent != null)
             {
-                // Juice not used 
-                ApplyToxicityDecay(pdata);
+                inv_item_cache_.Clear();
+                JuiceManager.AllJuiceInInv(inv_item_cache_, parent.GetInventory());
+                var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory(), player);
+                if (dmg == mod_dmg)
+                {
+                    // Juice not used 
+                    ApplyToxicityDecay(pdata);
+                }
+                dmg = mod_dmg;
             }
-            return mod_dmg;
+            
+            return dmg;
         }
 
         public double Update(IMyPlayer player, Settings settings)
@@ -327,7 +332,6 @@ namespace Natomic.DeadlyAccel
                     var iframe_protected = HasIframes(players_lookup_[pid], gridOn);
                     if (!iframe_protected)
                     {
-
                         if (gridOn != null)
                         {
                             accel = EntityAccel(gridOn);

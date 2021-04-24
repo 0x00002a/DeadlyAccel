@@ -137,9 +137,12 @@ namespace Natomic.DeadlyAccel
 
             InitAPI();
 
-            if (IsSP || IsMPHost)
+            if (MyAPIGateway.Multiplayer.IsServer)
             {
-                player_.OnJuiceAvalChanged += (p, aval) => hud.CurrJuiceAvalPercent = aval * 100.0;
+                if (!MyAPIGateway.Utilities.IsDedicated)
+                {
+                    player_.OnJuiceAvalChanged += (p, aval) => hud.CurrJuiceAvalPercent = aval * 100.0;
+                }
 
                 storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
                 MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
@@ -485,7 +488,7 @@ namespace Natomic.DeadlyAccel
                 {
                     PlayersUpdate();
 
-                    if (debug_enabled_ && hud != null && MyAPIGateway.Session.Player != null)
+                    if (debug_enabled_ && hud != null && MyAPIGateway.Multiplayer.IsServer)
                     {
                         hud.UpdateDebugDraw(player_.DataForPlayer(MyAPIGateway.Session.Player.IdentityId));
                     }
@@ -522,7 +525,6 @@ namespace Natomic.DeadlyAccel
             // executed AFTER world was saved
             if (MyAPIGateway.Multiplayer.IsServer)
             {
-
                 settings_.Save();
             }
         }
