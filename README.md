@@ -22,7 +22,7 @@ different cockpits offering more or less protection for your poor engineer again
 - Survival only (more an unplanned feature since you cannot take damage in creative)
 - "Juice" for increasing resiliance to high g (100% stolen from The Expanse). It can support any `Component` item through the API, see 
     [Deadly Acceleration - Basic Juice Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=2464816132) for a mod that uses this. 
-	See the [API Guide](https://github.com/0x00002a/DeadlyAccel/API%20Guide.md) for a basic rundown of how to use the API
+	See the [API Guide](https://github.com/0x00002a/DeadlyAccel/blob/main/API%20Guide.md) for a basic rundown of how to use the API
 
 ### A note on speed limits and balance
 
@@ -109,7 +109,7 @@ This mod is GPLv3. That means you can reupload it or any mod that contains it _a
 (ok that last one isn't actually legally binding)
 
 If in doubt, ask me in comments or the Keen discord (@Natomic). 
-Full license is avaliable [here](https://github.com/0x00002a/DeadlyAccel-BasicJuicePack/LICENSE). I reserve the right to ask 
+Full license is avaliable [here](https://github.com/0x00002a/DeadlyAccel/blob/73343caac2195d5714dc6f9387f62a3693b0e9bf/LICENSE). I reserve the right to ask 
 for your mod to be yeeted if you have reused my mod without obeying the license.
 
 ### Source
