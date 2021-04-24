@@ -20,6 +20,9 @@ different cockpits offering more or less protection for your poor engineer again
 - Changes how you fight and build ships (no more 180 hairpins at 100m/s)
 - Fighter cockpit is now actually useful (it has a _much_ heigher cushion effect allowing you to survive longer at high g)
 - Survival only (more an unplanned feature since you cannot take damage in creative)
+- "Juice" for increasing resiliance to high g (100% stolen from The Expanse). It can support any `Component` item through the API, see 
+    [Deadly Acceleration - Basic Juice Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=2464816132) for a mod that uses this. 
+	See the [API Guide](https://github.com/0x00002a/DeadlyAccel/API%20Guide.md) for a basic rundown of how to use the API
 
 ### A note on speed limits and balance
 
@@ -27,18 +30,27 @@ This mod is usable with a 100m/s speed limit, but only really in fights, since a
 using modded thrusters or very fast ships since going too far over the safe point can kill you before you can react. This mod is currently only tested by me and therefore 
 probably not very balanced. I suggest tuning the config to match your personal tastes.
 
+### Juice and toxicity mechanic 
+
+Overall juice is pretty self explanatory. Make it, slap it in your cockpit, and blast through a turn with no damage. Some things to note however:
+
+- Juice only works if it is in the inventory of the _cockpit_ you are in, it will not work if it is in your personal inventory. This is an intentional design decision 
+- Toxicity will decay over time naturally. However, if you use multiple juices without using a medbay, it will use the ***lowest*** decay rate of the juices used 
+	(e.g. you use one with `0.1` decay rate and one with `0.001`, your decay rate is now `0.001`)
+- Using a medbay (or survival kit) will cause the decay rate to increase dramatically (should decay from 100 in a few seconds tops). Additionally resetting toxicity to 0 
+	using a medbay will also reset your toxic decay rate
+
+
 ### Multiplayer
 
-This mod has limited multiplayer testing; new features are tested mostly in single-player and only occasionally in multiplayer (since I play mostly single-player).
+This mod undergoes testing in single-player, hosted multiplayer, and dedicated server environments. I am the only tester though so there may be bugs that only occure with 
+multiple players. Please report them.
 
-The current feature-set has been tested on a dedicated server but not when player hosted. Everything \*should\* work in hosted multiplayer but since I can't test it I can't be 
-sure.
 
 ### Planned features
 
 This is a whishlist of what I _might_ do with this mod, no promises:
 
-- "Juice" item(s) for increasing resiliance to high g (100% stolen from The Expanse) - In progress
 - Block damage. Ships can be torn apart by acceleration too (well, force), it just requires a lot more of it
 
 ### Support for modded cockpits
@@ -77,7 +89,7 @@ https://github.com/0x00002a/DeadlyAccel/issues/new/choose. Please include a copy
 your log files and steps to  reproduce it. You can find your log files at
 `%appdata%\SpaceEngineers\Storage\2422178213.sbm_DeadlyAccel`.
 
-## Reuse/Licensing 
+## Reuse/License
 
 All of _my_ code in this repository/mod is licensed under the GNU GPLv3. Some parts of this code are not my own work and I cannot and do not relicense them.
 The parts of this code ***not*** licensed under the GNU GPv3 are listed below, if in doubt, all my code has the license at the top:
@@ -85,29 +97,22 @@ The parts of this code ***not*** licensed under the GNU GPv3 are listed below, i
 - Anything in `SENetAPI` (SENetworkAPI)
 - Anything in `TextHudAPI` (TextHudAPI mod)
 
-Please contact the respective authors for redistribution rights for these parts of the mod. In regards to redistributing my code, read the license:
+Please contact the respective authors for redistribution rights for these parts of the mod. In regards to redistributing my code:
 
-```
-    DeadlyAccel Space Engineers mod
-    Copyright (C) 2021 Natasha England-Elbro
+This mod is GPLv3. That means you can reupload it or any mod that contains it _as long as_ you:
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+- Keep all existing license notices intact
+- Credit me
+- List your changes (easiest way is with git and github repo)
+- Make _all_ the source code of the relevent mod avaliable freely and publically with no restrictions placed on its access.
+- Make your mod GPLv3 as well
+- Give me your first born child
 
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+(ok that last one isn't actually legally binding)
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <https://www.gnu.org/licenses/>.
-```
-
-tl;dr Yes you can reupload part or all of it as long as you release all of the source including modifcations made, keep all existing license notices, and use the GPLv3
-license for any modifications. Note that "modifications" includes the entire mod it is distributed as part of, so if you want to use _any_ part of this mod you need to 
-make the whole thing GPLv3 (your mod that is).
+If in doubt, ask me in comments or the Keen discord (@Natomic). 
+Full license is avaliable [here](https://github.com/0x00002a/DeadlyAccel-BasicJuicePack/LICENSE). I reserve the right to ask 
+for your mod to be yeeted if you have reused my mod without obeying the license.
 
 ### Source
 

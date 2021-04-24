@@ -68,7 +68,7 @@ if __name__ == '__main__':
     infile = sys.argv[1]
     
     img = Image.open(infile)
-    if len(sys.argv) < 2 or sys.argv[2] != "--no-grid":
+    if len(sys.argv) < 3 or sys.argv[2] != "--no-grid":
         img = generate_grid(img)
         
     run_gui(img)
