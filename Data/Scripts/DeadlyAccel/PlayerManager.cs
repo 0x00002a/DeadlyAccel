@@ -191,10 +191,12 @@ namespace Natomic.DeadlyAccel
                 var units_needed = dmg * item.JuiceDef.ConsumptionRate;
                 var units_used = Math.Min((double)item.Canister.Amount, units_needed);
 
+                var dmg_blocked = 0.0;
                 if (item.JuiceDef.ConsumptionRate > 0)
                 {
-                    dmg -= units_used / item.JuiceDef.ConsumptionRate;
+                    dmg_blocked = units_used / item.JuiceDef.ConsumptionRate;
                 }
+                dmg -= dmg_blocked;
 
                 if (units_used == (double)item.Canister.Amount)
                 {    
@@ -202,7 +204,7 @@ namespace Natomic.DeadlyAccel
                 }
                 OnJuiceAvalChanged?.Invoke(player, (double)item.Canister.Amount - units_used);
                 inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
-                ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
+                ApplyToxicBuildup((float)dmg_blocked, item.JuiceDef, data);
             }
 
             return dmg;
@@ -210,6 +212,11 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Toxicity tracking
+
+        private void ResetToxicityMultiplier(PlayerData data)
+        {
+            data.lowest_toxic_decay = 0;
+        }
         public double ToxicBuildupFor(IMyPlayer player)
         {
             if (players_lookup_.ContainsKey(player.IdentityId))
@@ -238,7 +245,12 @@ namespace Natomic.DeadlyAccel
             if (players_lookup_.ContainsKey(pid))
             {
                 var data = players_lookup_[pid];
-                data.toxicity_buildup = Math.Max(data.toxicity_buildup - data.lowest_toxic_decay * multiplier, 0);
+                data.toxicity_buildup = Math.Max(data.toxicity_buildup - multiplier, 0);
+
+                if (data.toxicity_buildup == 0)
+                {
+                    ResetToxicityMultiplier(data);
+                }
             }
         }
 
