@@ -64,6 +64,7 @@ namespace Natomic.DeadlyAccel
 
         private const string ACCEL_WARNING_UPDATE = "aclwarn";
         private const string TOXIC_UPDATE = "utoxic";
+        private const string BOTTLES_UPDATE = "bupdate";
 
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
@@ -127,11 +128,16 @@ namespace Natomic.DeadlyAccel
             InitPlayerManager();
             InitPlayerEvents();
             InitAPI();
-            if (IsClient || IsSP)
+
+            if (IsSP)
             {
-                player_.OnJuiceAvalChanged += aval => hud.CurrJuiceAvalPercent = aval * 100.0;
+                player_.OnJuiceAvalChanged += (p, aval) => hud.CurrJuiceAvalPercent = aval * 100.0;
+            } else
+            {
+                player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval), steamId: p.SteamUserId);
             }
-            else if (!IsClient || IsSP)
+
+            if (!IsClient || IsSP)
             {
                 storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
                 MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
@@ -233,6 +239,19 @@ namespace Natomic.DeadlyAccel
                         catch (Exception e)
                         {
                             Log.Game.Error("Failed to deserialise toxic update");
+                            Log.Game.Error(e);
+                        }
+                    });
+                    net_api.RegisterNetworkCommand(BOTTLES_UPDATE, (sid, cmd, data, stamp) =>
+                    {
+                        try
+                        {
+                            var new_bottle_state = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
+                            hud.CurrJuiceAvalPercent = new_bottle_state;
+                        }
+                        catch (Exception e)
+                        {
+                            Log.Game.Error("Failed to deserialise bottle state");
                             Log.Game.Error(e);
                         }
                     });
@@ -359,7 +378,6 @@ namespace Natomic.DeadlyAccel
             MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
             MyVisualScriptLogicProvider.PlayerDisconnected -= OnPlayerDC;
             MyVisualScriptLogicProvider.PlayerHealthRecharging -= storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
-
 
         }
 

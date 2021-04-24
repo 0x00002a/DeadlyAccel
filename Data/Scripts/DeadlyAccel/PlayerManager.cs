@@ -34,7 +34,7 @@ namespace Natomic.DeadlyAccel
         private readonly Dictionary<long, PlayerData> players_lookup_ = new Dictionary<long, PlayerData>();
         private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
-        public event Action<double> OnJuiceAvalChanged;
+        public event Action<IMyPlayer, double> OnJuiceAvalChanged;
         
 
         #region Accel calculations
@@ -172,7 +172,7 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Juice 
-        private double ApplyJuice(double dmg, PlayerData data, List<JuiceItem> candidates, IMyInventory inv)
+        private double ApplyJuice(double dmg, PlayerData data, List<JuiceItem> candidates, IMyInventory inv, IMyPlayer player)
         {
             if (data.toxicity_buildup >= TOXICITY_CUTOFF)
             {
@@ -200,7 +200,7 @@ namespace Natomic.DeadlyAccel
                 {    
                     ++i;        
                 }
-                OnJuiceAvalChanged?.Invoke((double)item.Canister.Amount - units_used);
+                OnJuiceAvalChanged?.Invoke(player, (double)item.Canister.Amount - units_used);
                 inv.RemoveItems(item.Canister.ItemId, (MyFixedPoint)units_used);
                 ApplyToxicBuildup((float)units_used, item.JuiceDef, data);
             }
@@ -276,7 +276,7 @@ namespace Natomic.DeadlyAccel
 
             var pdata = players_lookup_[player.IdentityId];
             var dmg = CalcAccelDamage(parent, accel, settings);
-            var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory());
+            var mod_dmg = ApplyJuice(dmg, pdata, inv_item_cache_, parent.GetInventory(), player);
             if (dmg == mod_dmg)
             {
                 // Juice not used 
@@ -327,7 +327,7 @@ namespace Natomic.DeadlyAccel
                 }
                 if (player?.Character?.Parent == null)
                 {
-                    OnJuiceAvalChanged?.Invoke(0)
+                    OnJuiceAvalChanged?.Invoke(player, 0);
                 }
                 return 0.0;
             }
