@@ -394,13 +394,7 @@ namespace Natomic.DeadlyAccel
             // executed when world is exited to unregister events and stuff
 
             Instance = null; // important for avoiding this object to remain allocated in memory
-            if (IsSP || MyAPIGateway.Multiplayer.IsServer)
-            {
-                foreach(var player in player_cache_.Values)
-                {
-                    player_.SavePlayerData(player);
-                }
-            }
+            
             if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
             {
                 MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
@@ -513,6 +507,11 @@ namespace Natomic.DeadlyAccel
             // executed AFTER world was saved
             if (MyAPIGateway.Multiplayer.IsServer)
             {
+                foreach(var player in player_cache_.Values)
+                {
+                    player_.SavePlayerData(player);
+                }
+
                 settings_.Save();
             }
         }

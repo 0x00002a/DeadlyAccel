@@ -9,12 +9,12 @@ using VRage.Game.Entity;
 
 namespace Natomic.DeadlyAccel
 {
-    struct JuiceItem
+    public struct JuiceItem
     {
         public API.JuiceDefinition JuiceDef;
         public MyPhysicalInventoryItem Canister;
     }
-    class JuiceTracker
+    public class JuiceTracker
     {
         public const string CANISTER_TYPE_ID = "MyObjectBuilder_Component";
 

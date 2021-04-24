@@ -16,13 +16,13 @@ using VRageMath;
 
 namespace Natomic.DeadlyAccel
 {
-    class PlayerManager
+    public class PlayerManager
     {
-        class PlayerData
+        public class PlayerData
         {
-            public int iframes = 0;
-            public double toxicity_buildup = 0.0;
-            public double lowest_toxic_decay = 0.0;
+            public int iframes;
+            public double toxicity_buildup;
+            public double lowest_toxic_decay;
         }
         private readonly static Guid STORAGE_GUID = new Guid("15AB8152-C66D-4064-9B5D-0F3DAE29F5F4");
 
@@ -315,13 +315,12 @@ namespace Natomic.DeadlyAccel
                 }
 
                 var pid = player.IdentityId;
+                RegisterPlayer(player);
                 if (!player.Character.IsDead
                     && !(settings.IgnoreJetpack && AccelNotDueToJetpack(player.Character))
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
-                    RegisterPlayer(player);
-
 
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
                     var gridOn = GridStandingOn(player.Character); // This is expensive!
@@ -378,8 +377,8 @@ namespace Natomic.DeadlyAccel
                 return new PlayerData();
             }
 
-            return MyAPIGateway.Utilities.SerializeFromXML<PlayerData>(player.Character.Storage[STORAGE_GUID]);
             Log.Game.Debug($"Loaded stored data for {player.DisplayName}");
+            return MyAPIGateway.Utilities.SerializeFromXML<PlayerData>(player.Character.Storage[STORAGE_GUID]);
         }
 
         public void SavePlayerData(IMyPlayer player)
