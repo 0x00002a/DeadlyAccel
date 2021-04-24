@@ -163,7 +163,11 @@ namespace Natomic.DeadlyAccel
         {
             if (player_cache_.ContainsKey(pid))
             {
-                player_.LoadPlayerData(player_cache_[pid]);
+                var p = player_cache_[pid];
+                if (hud != null)
+                {
+                    hud.ToxicityLevels = player_.ToxicBuildupFor(p);
+                }
             }
         }
         private void OnPlayerHealthRecharge(long pid, int type, float amount)
@@ -360,8 +364,10 @@ namespace Natomic.DeadlyAccel
         }
         public void OnPlayerDC(long playerId)
         {
-            player_cache_.Remove(playerId);
-            player_.DeregisterPlayer(playerId);
+            if (player_cache_.ContainsKey(playerId)) {
+                player_cache_.Remove(playerId);
+                player_.DeregisterPlayer(player_cache_[playerId]);
+            }
             Log.Game.Info($"Player disconnected: {playerId}");
         }
         public static string FormatCushionLookup(string typeid, string subtypeid)

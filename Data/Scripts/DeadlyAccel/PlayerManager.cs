@@ -321,7 +321,7 @@ namespace Natomic.DeadlyAccel
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
-                    RegisterPlayer(pid);
+                    RegisterPlayer(player);
 
 
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
@@ -360,25 +360,27 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Player tracking
-        private void RegisterPlayer(long id)
+        private void RegisterPlayer(IMyPlayer p)
         {
-            if (!players_lookup_.ContainsKey(id))
+            if (!players_lookup_.ContainsKey(p.IdentityId))
             {
-                players_lookup_.Add(id, new PlayerData());
+                players_lookup_.Add(p.IdentityId, LoadPlayerData(p));
             }
         }
-        public void DeregisterPlayer(long id)
+        public void DeregisterPlayer(IMyPlayer p)
         {
-            players_lookup_.Remove(id);
+            SavePlayerData(p);
+            players_lookup_.Remove(p.IdentityId);
         }
-        public void LoadPlayerData(IMyPlayer player)
+        private PlayerData LoadPlayerData(IMyPlayer player)
         {
-            if (player?.Character?.Storage == null || (!player?.Character?.Storage.ContainsKey(STORAGE_GUID) ?? true))
+            if (player?.Character?.Storage == null)
             {
-                return;
+                return new PlayerData();
             }
 
-            players_lookup_[player.IdentityId] = MyAPIGateway.Utilities.SerializeFromXML<PlayerData>(player.Character.Storage[STORAGE_GUID]);
+            return MyAPIGateway.Utilities.SerializeFromXML<PlayerData>(player.Character.Storage[STORAGE_GUID]);
+            Log.Game.Debug($"Loaded stored data for {player.DisplayName}");
         }
 
         public void SavePlayerData(IMyPlayer player)
@@ -395,6 +397,7 @@ namespace Natomic.DeadlyAccel
                 player.Character.Storage = new MyModStorageComponent { [STORAGE_GUID] = "" };
             }
             player.Character.Storage[STORAGE_GUID] = MyAPIGateway.Utilities.SerializeToXML(data);
+            Log.Game.Debug($"Saved storage data for {player.DisplayName}");
             
         }
         #endregion
