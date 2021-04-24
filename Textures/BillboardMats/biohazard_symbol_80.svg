@@ -14,7 +14,7 @@
    version="1.1"
    id="svg8"
    inkscape:version="1.0.1 (3bc2e813f5, 2020-09-07)"
-   sodipodi:docname="biohazard_symbol_80.svg"
+   sodipodi:docname="biohazard_symbol_100.svg"
    inkscape:export-filename="C:\Users\Nat\AppData\Roaming\SpaceEngineers\Mods\DeadlyAccel\Textures\BillboardMats\biohazard_symbol.png"
    inkscape:export-xdpi="96.000008"
    inkscape:export-ydpi="96.000008">
@@ -72,7 +72,7 @@
       <g
          id="g933"
          transform="matrix(0.52154397,0,0,0.52154397,256.32887,179.60615)"
-         style="fill:#ffcc00">
+         style="fill:#ff0000">
         <use
            xlink:href="#p-2"
            transform="rotate(120,260,260)"
@@ -81,7 +81,7 @@
            y="0"
            width="100%"
            height="100%"
-           style="fill:#ffcc00" />
+           style="fill:#ff0000" />
         <use
            xlink:href="#p-2"
            transform="rotate(-120,260,260)"
@@ -90,7 +90,7 @@
            y="0"
            width="100%"
            height="100%"
-           style="fill:#ffcc00" />
+           style="fill:#ff0000" />
         <use
            xlink:href="#p-2"
            transform="rotate(0.47458892,180.29629,354.83148)"
@@ -99,7 +99,7 @@
            y="0"
            width="100%"
            height="100%"
-           style="fill:#ffcc00" />
+           style="fill:#ff0000" />
       </g>
     </g>
   </g>
