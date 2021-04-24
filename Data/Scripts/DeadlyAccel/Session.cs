@@ -68,6 +68,7 @@ namespace Natomic.DeadlyAccel
 
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
+        bool IsMPHost => MyAPIGateway.Multiplayer.MultiplayerActive && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated;
 
         private bool RegisterJuice(object obj)
         {
@@ -121,27 +122,30 @@ namespace Natomic.DeadlyAccel
             {
                 BuildCushioningCache(settings_);
             }
-            if (IsClient || IsSP)
+            if (!MyAPIGateway.Utilities.IsDedicated)
             {
                 hud = new HUDManager();
             }
             InitPlayerManager();
-            InitPlayerEvents();
+
+            if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
+            {
+                InitPlayerEvents();
+            }
+
             InitAPI();
 
-            if (IsSP)
+            if (IsSP || IsMPHost)
             {
                 player_.OnJuiceAvalChanged += (p, aval) => hud.CurrJuiceAvalPercent = aval * 100.0;
+
+                storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
+                MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
             } else
             {
                 player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval * 100.0), steamId: p.SteamUserId);
             }
 
-            if (!IsClient || IsSP)
-            {
-                storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ = (pid, type, amount) => OnPlayerHealthRecharge(pid, (int)type, amount);
-                MyVisualScriptLogicProvider.PlayerHealthRecharging += storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
-            }
         }
 
         private void InitLogger()
@@ -375,28 +379,18 @@ namespace Natomic.DeadlyAccel
             // executed when world is exited to unregister events and stuff
 
             Instance = null; // important for avoiding this object to remain allocated in memory
-            MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
-            MyVisualScriptLogicProvider.PlayerDisconnected -= OnPlayerDC;
-            MyVisualScriptLogicProvider.PlayerHealthRecharging -= storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
+            if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
+            {
+                MyVisualScriptLogicProvider.PlayerConnected -= OnPlayerConnect;
+                MyVisualScriptLogicProvider.PlayerDisconnected -= OnPlayerDC;
+            } 
+            if (storage_for_keen_whitelist_bs_lambda_for_medbay_usage_ != null)
+            {
+                MyVisualScriptLogicProvider.PlayerHealthRecharging -= storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
+            }
 
         }
 
-        public override void HandleInput()
-        {
-            // gets called 60 times a second before all other update methods, regardless of framerate, game pause or MyUpdateOrder.
-        }
-
-        public override void UpdateBeforeSimulation()
-        {
-            // executed every tick, 60 times a second, before physics simulation and only if game is not paused.
-        }
-
-        public override void Simulate()
-        {
-            // executed every tick, 60 times a second, during physics simulation and only if game is not paused.
-            // NOTE in this example this won't actually be called because of the lack of MyUpdateOrder.Simulation argument in MySessionComponentDescriptor
-        }
-       
         private void UpdatePlayersCache()
         {
             MyAPIGateway.Multiplayer.Players.GetPlayers(null, p =>
