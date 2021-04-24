@@ -134,7 +134,7 @@ namespace Natomic.DeadlyAccel
                 player_.OnJuiceAvalChanged += (p, aval) => hud.CurrJuiceAvalPercent = aval * 100.0;
             } else
             {
-                player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval), steamId: p.SteamUserId);
+                player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval * 100.0), steamId: p.SteamUserId);
             }
 
             if (!IsClient || IsSP)
