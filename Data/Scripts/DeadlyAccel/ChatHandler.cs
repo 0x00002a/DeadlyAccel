@@ -77,6 +77,8 @@ Then to save it on disk (done automatically on world save, but a reload without 
         private const string RELOAD_CONF_CMD = "reloadcfg";
         private const string SAVE_CONF_CMD = "savecfg";
 
+        public event Action<bool> OnToggleDebug;
+
         private void ShowDisabledMsg()
         {
             MyVisualScriptLogicProvider.SendChatMessageColored("Apologies, config commands are currently disabled in multiplayer due to sync issues. reload is the only avaliable command", Color.Yellow);
@@ -85,6 +87,21 @@ Then to save it on disk (done automatically on world save, but a reload without 
         {
             net.RegisterChatCommand("", OnHelp);
             net.RegisterChatCommand("help", OnHelp);
+            net.RegisterChatCommand("debug", (args) =>
+            {
+                switch(args)
+                {
+                    case "on":
+                        OnToggleDebug?.Invoke(true);
+                        break;
+                    case "off":
+                        OnToggleDebug?.Invoke(false);
+                        break;
+                    default:
+                        Log.UI.Error($"Invalid argument to debug: '{args}'");
+                        break;
+                }
+            });
 
             net.RegisterChatCommand("config", (argsStr) =>
             {

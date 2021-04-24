@@ -66,6 +66,8 @@ namespace Natomic.DeadlyAccel
         private const string TOXIC_UPDATE = "utoxic";
         private const string BOTTLES_UPDATE = "bupdate";
 
+        private bool debug_enabled_ = false;
+
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
         bool IsMPHost => MyAPIGateway.Multiplayer.MultiplayerActive && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated;
@@ -146,6 +148,12 @@ namespace Natomic.DeadlyAccel
             {
                 player_.OnJuiceAvalChanged += (p, aval) => Net.NetworkAPI.Instance.SendCommand(BOTTLES_UPDATE, data: MyAPIGateway.Utilities.SerializeToBinary(aval * 100.0), steamId: p.SteamUserId);
             }
+
+            cmd_handler_.OnToggleDebug += (debug) =>
+            {
+                debug_enabled_ = debug;
+                
+            };
 
         }
 
@@ -476,7 +484,13 @@ namespace Natomic.DeadlyAccel
                 if (tick % 10 == 0)
                 {
                     PlayersUpdate();
+
+                    if (debug_enabled_ && hud != null && MyAPIGateway.Session.Player != null)
+                    {
+                        hud.UpdateDebugDraw(MyAPIGateway.Session.Player.IdentityId);
+                    }
                 }
+
             }
 
             catch (Exception e)

@@ -24,6 +24,7 @@ using Natomic.Logging;
 using System;
 using System.Linq;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
+using Sandbox.ModAPI;
 
 namespace Natomic.DeadlyAccel
 {
@@ -278,6 +279,22 @@ namespace Natomic.DeadlyAccel
             public TextLabel fill_lvl_lbl_ = new TextLabel(FILL_LVL_LOCATION);
         }
 
+        private class DebugHUD
+        {
+            public void Init()
+            {
+                lbl_.Init();
+            }
+            public void Update<T>(T obj)
+            {
+                lbl_.Clear();
+                lbl_.Append(MyAPIGateway.Utilities.SerializeToXML<T>(obj));
+            }
+
+            public static Vector2D DRAW_POS = new Vector2D(-0.97, 0.6);
+            public TextLabel lbl_ = new TextLabel(DRAW_POS);
+        }
+
         public bool Enabled { get; }
 
         public double CurrJuiceAvalPercent
@@ -352,6 +369,17 @@ namespace Natomic.DeadlyAccel
 
             hud_initialised_ = true;
         }
+
+        public void UpdateDebugDraw<T>(T obj)
+        {
+            if (debug_draw_ == null)
+            {
+                debug_draw_ = new DebugHUD();
+                debug_draw_.Init();
+            }
+            debug_draw_.Update(obj);
+        }
+
         public void ShowWarning()
         {
             if (hud_initialised_)
@@ -388,6 +416,7 @@ namespace Natomic.DeadlyAccel
         private BottlesHUD bottle_handler_ = new BottlesHUD();
         private FlashController<HudAPIv2.BillBoardHUDMessage> accel_warn_ = new FlashController<HudAPIv2.BillBoardHUDMessage>();
         private HudAPIv2 api_handle_;
+        private DebugHUD debug_draw_;
         private bool hud_initialised_ = false;
 
     }

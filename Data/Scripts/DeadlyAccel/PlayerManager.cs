@@ -370,6 +370,12 @@ namespace Natomic.DeadlyAccel
             SavePlayerData(p);
             players_lookup_.Remove(p.IdentityId);
         }
+        public PlayerData DataForPlayer(long pid)
+        {
+            PlayerData p;
+            players_lookup_.TryGetValue(pid, out p);
+            return p;
+        }
         private PlayerData LoadPlayerData(IMyPlayer player)
         {
             if (player?.Character?.Storage == null)
