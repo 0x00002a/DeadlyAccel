@@ -17,6 +17,7 @@
  */
 
 using Natomic.Logging;
+using Sandbox.Engine.Physics;
 using Sandbox.Game;
 using Sandbox.Game.Entities.Character.Components;
 using Sandbox.Game.EntityComponents;
@@ -26,6 +27,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using VRage;
+using VRage.Game;
 using VRage.Game.Entity;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Interfaces;
@@ -41,6 +43,7 @@ namespace Natomic.DeadlyAccel
             public int iframes;
             public double toxicity_buildup;
             public double lowest_toxic_decay;
+            public MyCharacterMovementEnum movement_state;
         }
         private readonly static Guid STORAGE_GUID = new Guid("15AB8152-C66D-4064-9B5D-0F3DAE29F5F4");
 
@@ -56,7 +59,7 @@ namespace Natomic.DeadlyAccel
         private readonly List<JuiceItem> inv_item_cache_ = new List<JuiceItem>();
 
         public event Action<IMyPlayer, double> OnJuiceAvalChanged;
-        
+
 
         #region Accel calculations
         private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
@@ -173,7 +176,29 @@ namespace Natomic.DeadlyAccel
 
         #endregion
         #region Misc invincibility
-        
+
+        internal static bool MovingUnderOwnPower(IMyCharacter character)
+        {
+            var state = character.CurrentMovementState;
+            switch(state)
+            {
+                // I _really_ hope Keen doesn't add any more of these damn things
+                case MyCharacterMovementEnum.Ladder:
+                case MyCharacterMovementEnum.LadderUp:
+                case MyCharacterMovementEnum.LadderDown:
+                case MyCharacterMovementEnum.LadderOut:
+                case MyCharacterMovementEnum.Died:
+                case MyCharacterMovementEnum.Falling:
+                case MyCharacterMovementEnum.Flying:
+                case MyCharacterMovementEnum.Standing:
+                case MyCharacterMovementEnum.Crouching:
+                    return false;
+                default:
+                    return true;
+            }
+            
+        }
+
         private bool HasIframes(PlayerData data, IMyEntity standing_on)
         {
             if (standing_on != null)
@@ -348,13 +373,12 @@ namespace Natomic.DeadlyAccel
 
                     var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
                     var gridOn = GridStandingOn(player.Character); // This is expensive!
-                    var iframe_protected = HasIframes(players_lookup_[pid], gridOn);
-                    if (!iframe_protected)
+
+                    if (gridOn != null)
                     {
-                        if (gridOn != null)
-                        {
-                            accel = EntityAccel(gridOn);
-                        }
+                        accel = EntityAccel(gridOn);
+                    } else if (!MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
+                    {
                         return CalcTotalDmg(player, accel, settings);
                     }
 
@@ -378,6 +402,9 @@ namespace Natomic.DeadlyAccel
 
             return 0.0;
         }
+
+
+
 
         #endregion
         #region Player tracking
