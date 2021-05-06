@@ -62,31 +62,7 @@ namespace Natomic.DeadlyAccel
 
 
         #region Accel calculations
-        private float CalcCharAccel(IMyPlayer player, IMyCubeBlock parent)
-        {
-            var physics = player.Character.Physics;
-            var worldPos = player.Character.GetPosition();
-            var com = player.Character.WorldAABB.Center;
-            if (parent != null)
-            {
-                var grid = parent.CubeGrid;
-                if (grid == null)
-                {
-                    var fileMsg = $"Character parent was not decended from IMyCubeBlock";
-                    Log.Game.Error(fileMsg);
-                    Log.UI.Error($"{fileMsg} - This is likely a problem with your cockpit mod!");
-                }
-                else
-                {
-                    physics = grid.Physics;
-                    worldPos = grid.GetPosition();
-                    com = physics.CenterOfMassWorld;
-                }
-            }
-
-            return physics != null ? (physics.LinearAcceleration + physics.AngularAcceleration.Cross(worldPos - com)).Length() : 0;
-
-        }
+        
         private float EntityAccel(IMyEntity entity)
         {
             var physics = entity?.Physics;
@@ -371,14 +347,15 @@ namespace Natomic.DeadlyAccel
                     )
                 {
 
-                    var accel = CalcCharAccel(player, player.Character.Parent as IMyCubeBlock);
-                    var gridOn = GridStandingOn(player.Character); // This is expensive!
+                    var grid_parent = player.Character.Parent == null 
+                            ? GridStandingOn(player.Character) /* This is expensive! */ : 
+                            (player.Character.Parent as IMyCubeBlock)?.CubeGrid;
 
-                    if (gridOn != null)
-                    {
-                        accel = EntityAccel(gridOn);
-                    } 
-                    if (gridOn != null || !MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
+                    var accel_reference = grid_parent == null ? player.Character : grid_parent;
+
+                    var accel = EntityAccel(accel_reference);
+
+                    if (grid_parent != null || !MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
                     {
                         return CalcTotalDmg(player, accel, settings);
                     } 
