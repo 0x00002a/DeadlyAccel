@@ -377,11 +377,11 @@ namespace Natomic.DeadlyAccel
                     if (gridOn != null)
                     {
                         accel = EntityAccel(gridOn);
-                    } else if (!MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
+                    } 
+                    if (gridOn != null || !MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
                     {
                         return CalcTotalDmg(player, accel, settings);
-                    }
-
+                    } 
                 }
 
                 if (players_lookup_.ContainsKey(pid))
