@@ -26,6 +26,7 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Xml.Serialization;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
@@ -43,7 +44,9 @@ namespace Natomic.DeadlyAccel
             public int iframes;
             public double toxicity_buildup;
             public double lowest_toxic_decay;
-            public MyCharacterMovementEnum movement_state;
+
+            [XmlIgnore]
+            public MyCharacterJetpackComponent jetpack;
         }
         private readonly static Guid STORAGE_GUID = new Guid("15AB8152-C66D-4064-9B5D-0F3DAE29F5F4");
 
@@ -75,10 +78,9 @@ namespace Natomic.DeadlyAccel
 
 
         }
-        private bool AccelNotDueToJetpack(IMyCharacter character)
+        internal static bool AccelNotDueToJetpack(MyCharacterJetpackComponent jetpack)
         {
-            var jetpack = character.Components.Get<MyCharacterJetpackComponent>();
-            return (jetpack != null && jetpack.Running && jetpack.FinalThrust.Length() > 0);
+            return (jetpack != null && jetpack.Running && jetpack.FinalThrust.LengthSquared() > 0);
         }
 
 
@@ -175,22 +177,6 @@ namespace Natomic.DeadlyAccel
             
         }
 
-        private bool HasIframes(PlayerData data, IMyEntity standing_on)
-        {
-            if (standing_on != null)
-            {
-                data.iframes = IFRAME_MAX;
-            }
-            if (data.iframes <= 0 || standing_on != null)
-            {
-                return false;
-            }
-            else if (data.iframes > 0)
-            {
-                data.iframes--;
-            }
-            return true;
-        }
 
         #endregion
         #region Juice 
@@ -341,17 +327,42 @@ namespace Natomic.DeadlyAccel
 
                 var pid = player.IdentityId;
                 RegisterPlayer(player);
+                var pdata = players_lookup_[pid];
+                if (pdata.jetpack == null)
+                {
+                    pdata.jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
+                }
+                var dampers_relative_to = (player.Character as Sandbox.Game.Entities.IMyControllableEntity)?.RelativeDampeningEntity;
+
                 if (!player.Character.IsDead
-                    && !(settings.IgnoreJetpack && AccelNotDueToJetpack(player.Character))
+                    && !(settings.IgnoreJetpack && AccelNotDueToJetpack(pdata.jetpack) && dampers_relative_to == null)
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
-
-                    var grid_parent = player.Character.Parent == null 
-                            ? GridStandingOn(player.Character) /* This is expensive! */ : 
-                            (player.Character.Parent as IMyCubeBlock)?.CubeGrid;
-
+                    IMyEntity grid_parent;
+                    if (player.Character.Parent != null)
+                    {
+                        grid_parent = (player.Character.Parent as IMyCubeBlock)?.CubeGrid;
+                    }
+                    else
+                    {
+                        var standing_on = GridStandingOn(player.Character);  /* This is expensive! */ 
+                        if (standing_on != null)
+                        {
+                            grid_parent = standing_on;
+                            if (GridIgnored(standing_on as IMyCubeGrid, settings))
+                            {
+                                return 0.0;
+                            }
+                        }
+                        else
+                        {
+                            grid_parent = dampers_relative_to;
+                        }
+                    }
+                    
                     var accel_reference = grid_parent == null ? player.Character : grid_parent;
+
 
                     var accel = EntityAccel(accel_reference);
 
