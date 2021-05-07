@@ -342,7 +342,7 @@ namespace Natomic.DeadlyAccel
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
-                    IMyEntity grid_parent;
+                    IMyEntity grid_parent = null;
                     if (player.Character.Parent != null)
                     {
                         grid_parent = (player.Character.Parent as IMyCubeBlock)?.CubeGrid;
@@ -357,8 +357,7 @@ namespace Natomic.DeadlyAccel
                             {
                                 return 0.0;
                             }
-                        }
-                        else
+                        } else
                         {
                             grid_parent = player.Character;
                         }

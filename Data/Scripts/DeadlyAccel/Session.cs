@@ -71,6 +71,7 @@ namespace Natomic.DeadlyAccel
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
         bool IsMPHost => MyAPIGateway.Multiplayer.MultiplayerActive && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated;
+        bool DontShowDmgHud => MyAPIGateway.Session.CreativeMode && settings_.ClientConfig.OnlyShowHUDOnDamage;
 
         private bool RegisterJuice(object obj)
         {
@@ -243,7 +244,8 @@ namespace Natomic.DeadlyAccel
                     {
                         try
                         {
-                            var show_danger = MyAPIGateway.Utilities.SerializeFromBinary<bool>(data);
+                            
+                            var show_danger = !DontShowDmgHud && MyAPIGateway.Utilities.SerializeFromBinary<bool>(data);
                             if (show_danger)
                             {
                                 hud.ShowWarning();
@@ -456,7 +458,10 @@ namespace Natomic.DeadlyAccel
                     }
                     if (dmg != 0)
                     {
-                        hud?.ShowWarning();
+                        if (!DontShowDmgHud)
+                        {
+                            hud?.ShowWarning();
+                        }
                         if (IsSP || !IsClient)
                         {
                             p.Character.DoDamage((float)dmg, MyStringHash.GetOrCompute("F = ma"), true);

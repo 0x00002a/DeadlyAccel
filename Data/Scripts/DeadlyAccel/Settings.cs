@@ -26,9 +26,20 @@ using System.IO;
 
 namespace Natomic.DeadlyAccel
 {
+    
+
     [ProtoContract]
     public class Settings
     {
+        /// <summary>
+        /// Client-side only settings, global rather than per-world
+        /// </summary>
+        public class CliSettings
+        {
+            [DefaultValue(true)]
+            public bool OnlyShowHUDOnDamage;
+        }
+
         [ProtoContract]
         public class CusheningEntry
         {
@@ -92,6 +103,20 @@ namespace Natomic.DeadlyAccel
         [DefaultValue(false)]
         public bool IgnoreRelativeDampers;
 
+        [ProtoIgnore]
+        public CliSettings ClientConfig
+        {
+            get
+            {
+                if (cli_settings_ == null && !MyAPIGateway.Utilities.IsDedicated)
+                {
+                    cli_settings_ = new CliSettings { OnlyShowHUDOnDamage = true  };
+                }
+                return cli_settings_;
+            }
+        }
+
+        internal CliSettings cli_settings_ = null;
         internal List<string> ignored_grid_names_;
         internal List<CusheningEntry> cushening_entries_;
 
@@ -104,6 +129,7 @@ namespace Natomic.DeadlyAccel
         {
             return VersionNumber >= other.VersionNumber;
         }
+
         private string GenerateBackupFilename(bool localStorage)
         {
             var n = 0;
