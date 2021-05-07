@@ -325,8 +325,14 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 case "IgnoredGridNames":
                     ConfigListCmd(cmd, settings_.IgnoredGridNames, value, "IgnoredGridNames");
                     break;
+                case "OnlyShowHUDOnDamage":
+                    if (!MyAPIGateway.Utilities.IsDedicated)
+                    {
+                        ConfigValueCmd(cmd, ref settings_.ClientConfig.OnlyShowHUDOnDamage, value, "OnlyShowHUDOnDamage");
+                    }
+                    break;
                 default:
-                    var msg = $"Unkown command: '{argsStr}'";
+                    var msg = $"Unknown config property: '{argsStr}'";
                     LogConfigValue(msg, true);
                     successful = false;
                     break;
