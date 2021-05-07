@@ -338,7 +338,7 @@ namespace Natomic.DeadlyAccel
                 var jp_dmg_ignored = (settings.IgnoreJetpack || AccelNotDueToJetpack(pdata.jetpack)) && damper_dmg_ignored;
 
                 if (!player.Character.IsDead
-                    && !jp_dmg_ignored
+                    && (!(pdata.jetpack?.Running ?? false) ||  !jp_dmg_ignored)
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
