@@ -321,7 +321,9 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 case "HideHUDInCreative":
                     if (!MyAPIGateway.Utilities.IsDedicated)
                     {
-                        ConfigValueCmd(cmd, ref settings_.ClientConfig.HideHUDInCreative, value, "HideHUDInCreative");
+                        bool conf_v = settings_.HideHUDInCreative;
+                        ConfigValueCmd(cmd, ref conf_v, value, "HideHUDInCreative");
+                        settings_.HideHUDInCreative = conf_v;
                     }
                     break;
                 default:

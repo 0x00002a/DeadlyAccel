@@ -23,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Xml.Serialization;
 
 namespace Natomic.DeadlyAccel
 {
@@ -31,16 +32,6 @@ namespace Natomic.DeadlyAccel
     [ProtoContract]
     public class Settings
     {
-        /// <summary>
-        /// Client-side only settings, global rather than per-world
-        /// </summary>
-        [ProtoContract]
-        public class CliSettings
-        {
-            [ProtoMember(1)]
-            [DefaultValue(true)]
-            public bool HideHUDInCreative;
-        }
 
         [ProtoContract]
         public class CusheningEntry
@@ -106,20 +97,23 @@ namespace Natomic.DeadlyAccel
         public bool IgnoreRelativeDampers;
 
         [ProtoMember(9)]
-        public CliSettings ClientConfig
+        [DefaultValue(true)]
+        public bool HideHUDInCreative
         {
+            set { hide_hud_creative_ = value; hide_hud_creative_set_ = true; }
             get
             {
-                if (cli_settings_ == null)
+                if (!hide_hud_creative_set_)
                 {
-                    cli_settings_ = new CliSettings { HideHUDInCreative = true  };
+                    hide_hud_creative_ = true;
+                    hide_hud_creative_set_ = true;
                 }
-                return cli_settings_;
+                return hide_hud_creative_;
             }
-            set { cli_settings_ = value; }
         }
 
-        internal CliSettings cli_settings_ = null;
+        internal bool hide_hud_creative_;
+        internal bool hide_hud_creative_set_ = false;
         internal List<string> ignored_grid_names_;
         internal List<CusheningEntry> cushening_entries_;
 
