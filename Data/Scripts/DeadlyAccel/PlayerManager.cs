@@ -76,9 +76,6 @@ namespace Natomic.DeadlyAccel
 
             var com = physics.HasRigidBody ? physics.CenterOfMassWorld : (Vector3D)physics.Center;
             return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - com)).Length();
-
-
-
         }
         internal static bool AccelNotDueToJetpack(MyCharacterJetpackComponent jetpack)
         {

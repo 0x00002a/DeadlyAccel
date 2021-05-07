@@ -407,7 +407,7 @@ namespace Natomic.DeadlyAccel
         {
             if (hud_initialised_)
             {
-                if (!MyAPIGateway.Gui.IsCursorVisible)
+                if (!MyAPIGateway.Gui.IsCursorVisible || MyAPIGateway.Gui.ChatEntryVisible)
                 {
                     accel_warn_.Draw();
                 } 
