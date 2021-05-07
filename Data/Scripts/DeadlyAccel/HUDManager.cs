@@ -25,6 +25,7 @@ using System;
 using System.Linq;
 using BlendTypeEnum = VRageRender.MyBillboard.BlendTypeEnum;
 using Sandbox.ModAPI;
+using VRage.Game.ModAPI;
 
 namespace Natomic.DeadlyAccel
 {
@@ -406,19 +407,17 @@ namespace Natomic.DeadlyAccel
         {
             if (hud_initialised_)
             {
-                //toxicity_handler_.Toxicity = 95;
-                accel_warn_.Draw();
-                /*toxicity_handler_
-                toxicity_levels_.Progress = 100;//MathHelper.CeilToInt(ToxicityLevels);
-                toxicity_lbl_.Visible = toxicity_levels_.Progress > 0;
-                toxicity_levels_.Draw();*/
+                if (!MyAPIGateway.Gui.IsCursorVisible)
+                {
+                    accel_warn_.Draw();
+                } 
             }
         }
         public void Dispose()
         {
             if (hud_initialised_)
             {
-                api_handle_.Close();
+                api_handle_.Unload();
             }
         }
 
