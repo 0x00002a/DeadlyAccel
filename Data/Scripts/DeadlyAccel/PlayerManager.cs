@@ -349,18 +349,12 @@ namespace Natomic.DeadlyAccel
                     }
                     else
                     {
-                        var standing_on = GridStandingOn(player.Character);  /* This is expensive! */ 
-                        if (standing_on != null)
-                        {
-                            grid_parent = standing_on;
-                            if (GridIgnored(standing_on as IMyCubeGrid, settings))
-                            {
-                                return 0.0;
-                            }
-                        } else
-                        {
-                            grid_parent = player.Character;
-                        }
+                        var standing_on = GridStandingOn(player.Character);  /* This is expensive! */
+                        grid_parent = standing_on ?? dampers_relative_to;
+                    }
+                    if (GridIgnored(grid_parent as IMyCubeGrid, settings))
+                    {
+                        return 0.0;
                     }
                     
                     var accel_reference = grid_parent ?? player.Character;
