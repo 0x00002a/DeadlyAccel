@@ -40,7 +40,7 @@ help: Prints this help text. Use help <command> to view detailed help on a comma
 config: Allows viewing and modifying configuration values
 ";
         private const string CONF_HELP_TXT = @"
-Usage: /da config <reload>|[<set|add|remove> <property name> <value>]
+Usage: /da config <reload>|[<set|add|remove|view> <property name> <value>]
 
 reload: Reloads the config 
 
@@ -325,10 +325,10 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 case "IgnoredGridNames":
                     ConfigListCmd(cmd, settings_.IgnoredGridNames, value, "IgnoredGridNames");
                     break;
-                case "OnlyShowHUDOnDamage":
+                case "HideHUDInCreative":
                     if (!MyAPIGateway.Utilities.IsDedicated)
                     {
-                        ConfigValueCmd(cmd, ref settings_.ClientConfig.OnlyShowHUDOnDamage, value, "OnlyShowHUDOnDamage");
+                        ConfigValueCmd(cmd, ref settings_.ClientConfig.HideHUDInCreative, value, "HideHUDInCreative");
                     }
                     break;
                 default:

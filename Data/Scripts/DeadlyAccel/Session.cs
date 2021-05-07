@@ -71,7 +71,7 @@ namespace Natomic.DeadlyAccel
         bool IsSP => !MyAPIGateway.Multiplayer.MultiplayerActive;
         bool IsClient => IsSP || (MyAPIGateway.Multiplayer.MultiplayerActive && !MyAPIGateway.Multiplayer.IsServer);
         bool IsMPHost => MyAPIGateway.Multiplayer.MultiplayerActive && MyAPIGateway.Multiplayer.IsServer && !MyAPIGateway.Utilities.IsDedicated;
-        bool DontShowDmgHud => MyAPIGateway.Session.CreativeMode && settings_.ClientConfig.OnlyShowHUDOnDamage;
+        bool DontShowDmgHud => MyAPIGateway.Session.CreativeMode && settings_.ClientConfig.HideHUDInCreative;
 
         private bool RegisterJuice(object obj)
         {

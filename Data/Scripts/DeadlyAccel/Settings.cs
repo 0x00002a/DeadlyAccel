@@ -37,7 +37,7 @@ namespace Natomic.DeadlyAccel
         public class CliSettings
         {
             [DefaultValue(true)]
-            public bool OnlyShowHUDOnDamage;
+            public bool HideHUDInCreative;
         }
 
         [ProtoContract]
@@ -110,7 +110,7 @@ namespace Natomic.DeadlyAccel
             {
                 if (cli_settings_ == null && !MyAPIGateway.Utilities.IsDedicated)
                 {
-                    cli_settings_ = new CliSettings { OnlyShowHUDOnDamage = true  };
+                    cli_settings_ = new CliSettings { HideHUDInCreative = true  };
                 }
                 return cli_settings_;
             }
