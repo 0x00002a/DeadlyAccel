@@ -34,8 +34,10 @@ namespace Natomic.DeadlyAccel
         /// <summary>
         /// Client-side only settings, global rather than per-world
         /// </summary>
+        [ProtoContract]
         public class CliSettings
         {
+            [ProtoMember(1)]
             [DefaultValue(true)]
             public bool HideHUDInCreative;
         }
@@ -103,11 +105,12 @@ namespace Natomic.DeadlyAccel
         [DefaultValue(false)]
         public bool IgnoreRelativeDampers;
 
+        [ProtoMember(9)]
         public CliSettings ClientConfig
         {
             get
             {
-                if (cli_settings_ == null && !MyAPIGateway.Utilities.IsDedicated)
+                if (cli_settings_ == null)
                 {
                     cli_settings_ = new CliSettings { HideHUDInCreative = true  };
                 }
