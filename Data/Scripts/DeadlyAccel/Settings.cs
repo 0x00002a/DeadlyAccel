@@ -21,6 +21,7 @@ using ProtoBuf;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 
 namespace Natomic.DeadlyAccel
@@ -86,6 +87,10 @@ namespace Natomic.DeadlyAccel
 
         [ProtoMember(7)]
         public int VersionNumber;
+
+        [ProtoMember(8)]
+        [DefaultValue(false)]
+        public bool IgnoreRelativeDampers;
 
         internal List<string> ignored_grid_names_;
         internal List<CusheningEntry> cushening_entries_;

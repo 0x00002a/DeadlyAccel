@@ -343,6 +343,7 @@ namespace Natomic.DeadlyAccel
                 VersionNumber = Settings.CurrentVersionNumber,
                 IgnoredGridNames = new List<string>(),
                 IgnoreRespawnShips = true, // Vanilla respawn ships are death traps due to parachutes
+                IgnoreRelativeDampers = false,
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)
