@@ -231,7 +231,7 @@ namespace Natomic.DeadlyAccel
                 Log.Game.Info("Initialised NetworkAPI");
             }
 
-            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.ServerToClient, LoadSettings(), true, false);
+            net_settings_ = new Net.NetSync<Settings>(this, Net.TransferType.Both, LoadSettings(), syncOnLoad: false, limitToSyncDistance: false);
             if (!net_inited)
             {
                 var net_api = Net.NetworkAPI.Instance;
@@ -288,6 +288,14 @@ namespace Natomic.DeadlyAccel
                     });
                 } 
             }
+            if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
+            {
+                net_settings_.Push();
+            } else
+            {
+                net_settings_.Fetch();
+            }
+
             Log.Game.Debug($"Loaded settings: {net_settings_.Value}");
             net_settings_.ValueChangedByNetwork += (old, curr, id) =>
             {

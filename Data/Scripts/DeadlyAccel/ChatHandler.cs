@@ -121,14 +121,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
                         case "remove":
                         case "view":
                         case "set":
-                            if (MyAPIGateway.Multiplayer.MultiplayerActive)
-                            {
-                                ShowDisabledMsg();
-                            }
-                            else
-                            {
-                                OnConfigEdit(argsStr);
-                            }
+                            OnConfigEdit(argsStr);
                             break;
                         case "reload":
                             if (!MyAPIGateway.Multiplayer.IsServer)
