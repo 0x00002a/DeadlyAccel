@@ -414,6 +414,13 @@ namespace Natomic.DeadlyAccel
                 toxicity_levels_.Draw();*/
             }
         }
+        public void Dispose()
+        {
+            if (hud_initialised_)
+            {
+                api_handle_.Close();
+            }
+        }
 
 
         private ToxicityHUD toxicity_handler_ = new ToxicityHUD();

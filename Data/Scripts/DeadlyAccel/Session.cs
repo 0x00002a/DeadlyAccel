@@ -415,6 +415,8 @@ namespace Natomic.DeadlyAccel
             {
                 MyVisualScriptLogicProvider.PlayerHealthRecharging -= storage_for_keen_whitelist_bs_lambda_for_medbay_usage_;
             }
+            hud?.Dispose();
+            
 
         }
 
