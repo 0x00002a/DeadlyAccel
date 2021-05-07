@@ -313,12 +313,14 @@ Then to save it on disk (done automatically on world save, but a reload without 
                 case "SafeMaximum":
                     ConfigValueCmd(cmd, ref settings_.SafeMaximum, value, "SafeMaximum");
                     break;
-
                 case "DamageScaleBase":
                     ConfigValueCmd(cmd, ref settings_.DamageScaleBase, value, "DamageScaleBase");
                     break;
                 case "IgnoreRespawnShips":
                     ConfigValueCmd(cmd, ref settings_.IgnoreRespawnShips, value, "IgnoreRespawnShips");
+                    break;
+                case "IgnoreRelativeDampers":
+                    ConfigValueCmd(cmd, ref settings_.IgnoreRelativeDampers, value, "IgnoreRelativeDampers");
                     break;
                 case "IgnoredGridNames":
                     ConfigListCmd(cmd, settings_.IgnoredGridNames, value, "IgnoredGridNames");
