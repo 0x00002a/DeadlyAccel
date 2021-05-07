@@ -5,7 +5,7 @@
 Space Engineers is a little more forgiving than reality in regards to `F = ma`, this mod fixes that.
 
 Have you ever been in an intense dogfight and done a 180 hairpin at 100m/s with your 99 gyros? 
-Well, unforuntely for you, your engineer should be a smear in the cockpit after such a stunt. 
+Well, unfortunately for you, your engineer should be a smear in the cockpit after such a stunt. 
 
 This mod makes you take damage if you accelerate too fast. Over a certain (configurable) amount of acceleration, you will start taking damage. 
 The damage is scaled depending on how far past the safe point you are. Being in a cockpit will reduce the damage you take, with 
@@ -18,9 +18,9 @@ different cockpits offering more or less protection for your poor engineer again
 - Highly customisable 
 - Warnings when exceeding limit (in case you didn't notice the red borders and sound effects)
 - Changes how you fight and build ships (no more 180 hairpins at 100m/s)
-- Fighter cockpit is now actually useful (it has a _much_ heigher cushion effect allowing you to survive longer at high g)
+- Fighter cockpit is now actually useful (it has a _much_ higher cushion effect allowing you to survive longer at high g)
 - Survival only (more an unplanned feature since you cannot take damage in creative)
-- "Juice" for increasing resiliance to high g (100% stolen from The Expanse). It can support any `Component` item through the API, see 
+- "Juice" for increasing resilience to high g (100% stolen from The Expanse). It can support any `Component` item through the API, see 
     [Deadly Acceleration - Basic Juice Pack](https://steamcommunity.com/sharedfiles/filedetails/?id=2464816132) for a mod that uses this. 
 	See the [API Guide](https://github.com/0x00002a/DeadlyAccel/blob/main/API%20Guide.md) for a basic rundown of how to use the API
 
@@ -55,14 +55,14 @@ This is a whishlist of what I _might_ do with this mod, no promises:
 
 ### Support for modded cockpits
 
-This mod is partially compatable with modded cockpits. While by default modded cockpits will have no cushioning applied, 
+This mod is partially compatible with modded cockpits. While by default modded cockpits will have no cushioning applied, 
 they can be added to the config same as vanilla.
 
 
 ## Configuration 
 
 Configuration can be done either through in-game commands (recommended) or through the on-disk XML file. For instructions on how to edit it in-game 
-type (in chat) `/da help config` with the mod loaded. Note that in multiplayer only `/da config reload` is avaliable due to sync issues.
+type (in chat) `/da help config` with the mod loaded. Note that in multiplayer only `/da config reload` is available due to sync issues.
 
 - `CushioningBlocks`: List of values for cushioning factors. 
 						Final damage per tick is multiplied by the 1 - cushioning value 
@@ -79,7 +79,7 @@ type (in chat) `/da help config` with the mod loaded. Note that in multiplayer o
 
 ### Breaking changes 
 
-When new options are added to the config file, the old version is backed-up (renamed to "DeadlyAccel.cfg.backup.x" where x is a unique identifer) and the default config is 
+When new options are added to the config file, the old version is backed-up (renamed to "DeadlyAccel.cfg.backup.x" where x is a unique identifier) and the default config is 
 loaded. Any modifications to the old config file must be copied over to the new file.
 
 ## Bug reports
@@ -102,14 +102,14 @@ This mod is GPLv3. That means you can reupload it or any mod that contains it _a
 - Keep all existing license notices intact
 - Credit me
 - List your changes (easiest way is with git and github repo)
-- Make _all_ the source code of the relevent mod avaliable freely and publically with no restrictions placed on its access.
+- Make _all_ the source code of the relevant mod available freely and publicly with no restrictions placed on its access.
 - Make your mod GPLv3 as well
 - Give me your first born child
 
 (ok that last one isn't actually legally binding)
 
-If in doubt, ask me in comments or the Keen discord (@Natomic). 
-Full license is avaliable [here](https://github.com/0x00002a/DeadlyAccel/blob/73343caac2195d5714dc6f9387f62a3693b0e9bf/LICENSE). I reserve the right to ask 
+If in doubt, ask me in comments or the Keen discord (\@Natomic). 
+Full license is available [here](https://github.com/0x00002a/DeadlyAccel/blob/73343caac2195d5714dc6f9387f62a3693b0e9bf/LICENSE). I reserve the right to ask 
 for your mod to be yeeted if you have reused my mod without obeying the license.
 
 ### Source

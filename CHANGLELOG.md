@@ -1,6 +1,26 @@
 # Deadly Acceleration Changelog
 
 
+## v1.5.0
+
+This version is mostly QoL and bugfixes. 
+
+### Features
+
+- Damage due to jetpack is no longer ignored even if IgnoreJetpack is true. Config value added to adjust this. Accel of the locked to 
+	grid is used instead. IgnoredGridNames also applies here 
+- HUD hidden in creative. Due to limitations of the mod api I cannot detect if a player is invincible so this is the next best thing. 
+	A config option has been added to adjust this 
+
+### Fixes
+
+- Memory leak and resultant duplicated HUD elements
+- Damage when walking. The detection logic for checking if the player is walking _should_ now be watertight. So no more insta-death when 
+	clipping off a block (hurray!)
+- IgnoredGridNames now applies to the grid you are standing on as well. Note this uses the old detection system so it may not always be 100% accurate
+- The HUD elements will no longer be drawn while in any form of menu (inventory, escape menu, etc)
+- Will no longer spam the info log with a bunch of XML 
+
 
 ## v1.4.0
 
