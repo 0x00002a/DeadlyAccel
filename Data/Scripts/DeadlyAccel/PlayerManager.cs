@@ -69,11 +69,13 @@ namespace Natomic.DeadlyAccel
         private float EntityAccel(IMyEntity entity)
         {
             var physics = entity?.Physics;
-            if (physics == null || physics.CenterOfMassWorld == null)
+            if (physics == null)
             {
                 throw new ArgumentException("EntityAccel passed entity with invalid physics");
             }
-            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - physics.CenterOfMassWorld)).Length();
+
+            var com = physics.HasRigidBody ? physics.CenterOfMassWorld : (Vector3D)physics.Center;
+            return (physics.LinearAcceleration + physics.AngularAcceleration.Cross(entity.GetPosition() - com)).Length();
 
 
 
@@ -334,8 +336,12 @@ namespace Natomic.DeadlyAccel
                 }
                 var dampers_relative_to = (player.Character as Sandbox.Game.Entities.IMyControllableEntity)?.RelativeDampeningEntity;
 
+
+                var damper_dmg_ignored = pdata.jetpack == null || !pdata.jetpack.Running || settings.IgnoreRelativeDampers || dampers_relative_to == null;
+                var jp_dmg_ignored = (settings.IgnoreJetpack || AccelNotDueToJetpack(pdata.jetpack)) && damper_dmg_ignored;
+
                 if (!player.Character.IsDead
-                    && !(settings.IgnoreJetpack && AccelNotDueToJetpack(pdata.jetpack) && dampers_relative_to == null)
+                    && !jp_dmg_ignored
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
                     )
                 {
@@ -357,11 +363,11 @@ namespace Natomic.DeadlyAccel
                         }
                         else
                         {
-                            grid_parent = dampers_relative_to;
+                            grid_parent = player.Character;
                         }
                     }
                     
-                    var accel_reference = grid_parent == null ? player.Character : grid_parent;
+                    var accel_reference = grid_parent ?? player.Character;
 
 
                     var accel = EntityAccel(accel_reference);
