@@ -11,6 +11,7 @@ This version is mostly QoL and bugfixes.
 	grid is used instead. IgnoredGridNames also applies here 
 - HUD hidden in creative. Due to limitations of the mod api I cannot detect if a player is invincible so this is the next best thing. 
 	A config option has been added to adjust this 
+- Editing config via command-line in multiplayer. Only admins can use this currently
 
 ### Fixes
 

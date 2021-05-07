@@ -62,8 +62,10 @@ they can be added to the config same as vanilla.
 ## Configuration 
 
 Configuration can be done either through in-game commands (recommended) or through the on-disk XML file. For instructions on how to edit it in-game 
-type (in chat) `/da help config` with the mod loaded. Note that in multiplayer only `/da config reload` is available due to sync issues.
+type (in chat) `/da help config` with the mod loaded. This works in multiplayer or single-player. Note however that currently only admin players 
+can do this in multiplayer. 
 
+- `HideHUDInCreative`: Whether to hide the HUD in creative. Unfortunately I cannot detect invincibility due to the limitations of the ModAPI
 - `CushioningBlocks`: List of values for cushioning factors. 
 						Final damage per tick is multiplied by the 1 - cushioning value 
 						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
@@ -75,6 +77,8 @@ type (in chat) `/da help config` with the mod loaded. Note that in multiplayer o
 - `DamageScaleBase`: Exponent for damage scaling (k). Higher values means damage will increase faster further past the safe point 
 - `IgnoredGridNames`: List of grid names that are ignored when checking if the pilot should take damage
 - `IgnoreRespawnShips`: Whether to ignore respawn ships when applying damage. It defaults to `true` since Vanilla drop-pods are otherwise death traps due to their parachutes
+- `IgnoreRelativeDampers`: Whether to ignore acceleration from object dampered to when using the jetpack. This is false by default. Note that this
+	option is effetely ignored if IgnoreJetpack is false
 - `VersionNumber`: Ignore this one, its for internal use by the mod
 
 ### Breaking changes 
