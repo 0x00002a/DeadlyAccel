@@ -103,7 +103,6 @@ namespace Natomic.DeadlyAccel
         [DefaultValue(false)]
         public bool IgnoreRelativeDampers;
 
-        [ProtoIgnore]
         public CliSettings ClientConfig
         {
             get
@@ -114,6 +113,7 @@ namespace Natomic.DeadlyAccel
                 }
                 return cli_settings_;
             }
+            set { cli_settings_ = value; }
         }
 
         internal CliSettings cli_settings_ = null;
