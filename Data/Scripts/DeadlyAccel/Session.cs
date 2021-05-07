@@ -91,7 +91,8 @@ namespace Natomic.DeadlyAccel
                 }
                 else
                 {
-                    Log.Game.Info($"Added juice definition: {def}");
+                    Log.Game.Info($"Added juice definition: {def.SubtypeId}");
+                    Log.Game.Debug($"Added juice definition: {def}");
                 }
                 return true;
             }
@@ -285,7 +286,7 @@ namespace Natomic.DeadlyAccel
                     });
                 } 
             }
-            Log.Game.Info($"Loaded settings: {net_settings_.Value}");
+            Log.Game.Debug($"Loaded settings: {net_settings_.Value}");
             net_settings_.ValueChangedByNetwork += (old, curr, id) =>
             {
                 if (!old.ValidAgainst(curr))
