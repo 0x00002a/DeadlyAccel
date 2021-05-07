@@ -65,21 +65,19 @@ Configuration can be done either through in-game commands (recommended) or throu
 type (in chat) `/da help config` with the mod loaded. This works in multiplayer or single-player. Note however that currently only admin players 
 can do this in multiplayer. 
 
-- `HideHUDInCreative`: Whether to hide the HUD in creative. Unfortunately I cannot detect invincibility due to the limitations of the ModAPI
+- `HideHUDInCreative`: Whether to hide the HUD in creative
 - `CushioningBlocks`: List of values for cushioning factors. 
 						Final damage per tick is multiplied by the 1 - cushioning value 
 						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
-                        Note that this property cannot be edited via in-game commands, you must edit the config file on disk directly.
+                        You must edit the config file directly to change this option.
 - `IgnoreJetpack`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
 - `SafeMaximum`: Acceleration greater than this value will cause the character to take damage. Damage is polynomially (x^k) proportional to how much
-					the current acceleration is over this value. The default is 5g because I found that to be the most balanced and is reasonable I think 
-					for someone in a futuristic space suit (pilots can apparently survive up to 7g "safely" with proper support but I found this too hard to reach in vanilla)
+					the current acceleration is over this value. The default is 5g (5 * 9.81)
 - `DamageScaleBase`: Exponent for damage scaling (k). Higher values means damage will increase faster further past the safe point 
 - `IgnoredGridNames`: List of grid names that are ignored when checking if the pilot should take damage
 - `IgnoreRespawnShips`: Whether to ignore respawn ships when applying damage. It defaults to `true` since Vanilla drop-pods are otherwise death traps due to their parachutes
 - `IgnoreRelativeDampers`: Whether to ignore acceleration from object dampered to when using the jetpack. This is false by default. Note that this
 	option is effetely ignored if IgnoreJetpack is false
-- `VersionNumber`: Ignore this one, its for internal use by the mod
 
 ### Breaking changes 
 
