@@ -23,6 +23,7 @@ using Sandbox.Game.Entities.Character.Components;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VRage.Game;
 using VRage.Game.Components;
 using VRage.Game.ModAPI;
@@ -65,6 +66,7 @@ namespace Natomic.DeadlyAccel
         private const string ACCEL_WARNING_UPDATE = "aclwarn";
         private const string TOXIC_UPDATE = "utoxic";
         private const string BOTTLES_UPDATE = "bupdate";
+        private const string INVALID_PERMS = "nperm";
 
         private bool debug_enabled_ = false;
 
@@ -221,7 +223,69 @@ namespace Natomic.DeadlyAccel
 
             MyAPIGateway.Utilities.SendModMessage(API.DeadlyAccelAPI.MOD_API_MSG_ID, apiHooks);
         }
-        
+
+        internal void RegisterClientCmdHandlers(Net.NetworkAPI net_api)
+        {
+            net_api.RegisterNetworkCommand(ACCEL_WARNING_UPDATE, (sid, cmd, data, stamp) =>
+                                {
+                                    try
+                                    {
+
+                                        var show_danger = !DontShowDmgHud && MyAPIGateway.Utilities.SerializeFromBinary<bool>(data);
+                                        if (show_danger)
+                                        {
+                                            hud.ShowWarning();
+                                        }
+                                        else
+                                        {
+                                            hud.ClearWarning();
+                                        }
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Log.Game.Error("Failed to deserialise accel warning msg");
+                                        Log.Game.Error(e);
+                                    }
+                                });
+            net_api.RegisterNetworkCommand(TOXIC_UPDATE, (sid, cmd, data, stamp) =>
+            {
+                try
+                {
+                    var new_toxic = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
+                    hud.ToxicityLevels = new_toxic;
+                }
+                catch (Exception e)
+                {
+                    Log.Game.Error("Failed to deserialise toxic update");
+                    Log.Game.Error(e);
+                }
+            });
+            net_api.RegisterNetworkCommand(BOTTLES_UPDATE, (sid, cmd, data, stamp) =>
+            {
+                try
+                {
+                    var new_bottle_state = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
+                    hud.CurrJuiceAvalPercent = new_bottle_state;
+                }
+                catch (Exception e)
+                {
+                    Log.Game.Error("Failed to deserialise bottle state");
+                    Log.Game.Error(e);
+                }
+            });
+            net_api.RegisterNetworkCommand(INVALID_PERMS, (sid, cmd, data, stamp) => {
+                try
+                {
+                    var act_name = MyAPIGateway.Utilities.SerializeFromBinary<string>(data);
+                    var msg = $"Invalid permission to perform action: '{act_name}'";
+                    Log.Game.Error(msg);
+                    Log.UI.Error(msg);
+                } catch(Exception e)
+                {
+                    Log.Game.Error(e);
+                }
+            });
+        }
         private void InitNetwork()
         {
             bool net_inited = Net.NetworkAPI.IsInitialized;
@@ -240,52 +304,7 @@ namespace Natomic.DeadlyAccel
 
 
                 if (IsClient) {
-                    net_api.RegisterNetworkCommand(ACCEL_WARNING_UPDATE, (sid, cmd, data, stamp) =>
-                    {
-                        try
-                        {
-                            
-                            var show_danger = !DontShowDmgHud && MyAPIGateway.Utilities.SerializeFromBinary<bool>(data);
-                            if (show_danger)
-                            {
-                                hud.ShowWarning();
-                            } else
-                            {
-                                hud.ClearWarning();
-                            }
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Game.Error("Failed to deserialise accel warning msg");
-                            Log.Game.Error(e);
-                        }
-                    });
-                    net_api.RegisterNetworkCommand(TOXIC_UPDATE, (sid, cmd, data, stamp) =>
-                    {
-                        try
-                        {
-                            var new_toxic = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
-                            hud.ToxicityLevels = new_toxic;
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Game.Error("Failed to deserialise toxic update");
-                            Log.Game.Error(e);
-                        }
-                    });
-                    net_api.RegisterNetworkCommand(BOTTLES_UPDATE, (sid, cmd, data, stamp) =>
-                    {
-                        try
-                        {
-                            var new_bottle_state = MyAPIGateway.Utilities.SerializeFromBinary<double>(data);
-                            hud.CurrJuiceAvalPercent = new_bottle_state;
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Game.Error("Failed to deserialise bottle state");
-                            Log.Game.Error(e);
-                        }
-                    });
+                    RegisterClientCmdHandlers(net_api);
                 } 
             }
             if (IsMPHost || MyAPIGateway.Utilities.IsDedicated)
@@ -299,6 +318,17 @@ namespace Natomic.DeadlyAccel
             Log.Game.Debug($"Loaded settings: {net_settings_.Value}");
             net_settings_.ValueChangedByNetwork += (old, curr, id) =>
             {
+                if (id != 0 && !IsClient)
+                {
+                    var player = player_cache_.Values.FirstOrDefault(p => p.SteamUserId == id);
+                    var has_perms = (player?.PromoteLevel ?? MyPromoteLevel.None) >= MyPromoteLevel.SpaceMaster;
+                    if (!has_perms)
+                    {
+                        Net.NetworkAPI.Instance?.SendCommand(INVALID_PERMS, data: MyAPIGateway.Utilities.SerializeToBinary("Change config"));
+                        net_settings_.Value = old;
+                        return;
+                    }
+                }
                 if (!old.ValidAgainst(curr))
                 {
                     Log.Game.Error($"Got send invalid settings: {curr}, reverting to current");
