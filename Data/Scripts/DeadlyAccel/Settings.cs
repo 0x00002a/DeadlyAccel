@@ -87,7 +87,7 @@ namespace Natomic.DeadlyAccel
         public bool IgnoreRespawnShips; // Whether to ignore grids where IsRespawn == true
 
         [ProtoIgnore]
-        public const int CurrentVersionNumber = 2; // Increases on breaking changes
+        public const int CurrentVersionNumber = 3; // Increases on breaking changes
 
         [ProtoMember(7)]
         public int VersionNumber;
@@ -111,6 +111,9 @@ namespace Natomic.DeadlyAccel
                 return hide_hud_creative_;
             }
         }
+
+        [ProtoMember(10)] [DefaultValue(false)]
+        public bool IgnoreCharacter; // Do not damage if not in cockpit
 
         internal bool hide_hud_creative_;
         internal bool hide_hud_creative_set_ = false;

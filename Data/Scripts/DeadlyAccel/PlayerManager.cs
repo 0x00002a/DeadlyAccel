@@ -340,6 +340,7 @@ namespace Natomic.DeadlyAccel
                 if (!player.Character.IsDead
                     && (!(pdata.jetpack?.Running ?? false) ||  !jp_dmg_ignored)
                     && !GridIgnored((player.Character.Parent as IMyCubeBlock)?.CubeGrid, settings)
+                    && (!settings.IgnoreCharacter || player.Character.Parent == null)
                     )
                 {
                     IMyEntity grid_parent = null;

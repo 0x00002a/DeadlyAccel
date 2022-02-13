@@ -67,17 +67,20 @@ can do this in multiplayer.
 
 - `HideHUDInCreative`: Whether to hide the HUD in creative
 - `CushioningBlocks`: List of values for cushioning factors. 
-						Final damage per tick is multiplied by the 1 - cushioning value 
-						for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
+                        Final damage per tick is multiplied by the 1 - cushioning value 
+                        for the cockpit before being applied (e.g. fighter cockpit has a value of 0.9 and therefore reduces all damage by 90%).
                         You must edit the config file directly to change this option.
 - `IgnoreJetpack`: Whether to ignore force applied due to the jetpack (Warning: Setting this to false may mean you are killed by your jetpack dampers)
 - `SafeMaximum`: Acceleration greater than this value will cause the character to take damage. Damage is polynomially (x^k) proportional to how much
-					the current acceleration is over this value. The default is 5g (5 * 9.81)
+                    the current acceleration is over this value. The default is 5g (5 * 9.81)
 - `DamageScaleBase`: Exponent for damage scaling (k). Higher values means damage will increase faster further past the safe point 
 - `IgnoredGridNames`: List of grid names that are ignored when checking if the pilot should take damage
 - `IgnoreRespawnShips`: Whether to ignore respawn ships when applying damage. It defaults to `true` since Vanilla drop-pods are otherwise death traps due to their parachutes
 - `IgnoreRelativeDampers`: Whether to ignore acceleration from object dampered to when using the jetpack. This is false by default. Note that this
-	option is effetely ignored if IgnoreJetpack is false
+    option is effetely ignored if IgnoreJetpack is false
+- `IgnoreCharacter`: When true completely ignores all damage unless the player is in a cockpit or some kind of seat. false by default but you may want to
+                     turn this on if you are experiencing frequent deaths while just walking around (due to game limitations it is very difficult to
+                     fix all the weird edge cases that cause this, hence this setting)
 
 ### Breaking changes 
 
