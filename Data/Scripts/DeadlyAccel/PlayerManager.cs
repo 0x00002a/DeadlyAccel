@@ -165,10 +165,10 @@ namespace Natomic.DeadlyAccel
                 case MyCharacterMovementEnum.LadderDown:
                 case MyCharacterMovementEnum.LadderOut:
                 case MyCharacterMovementEnum.Died:
-                case MyCharacterMovementEnum.Falling:
                 case MyCharacterMovementEnum.Flying:
                 case MyCharacterMovementEnum.Standing:
                 case MyCharacterMovementEnum.Crouching:
+                case MyCharacterMovementEnum.Falling: 
                     return false;
                 default:
                     return true;
@@ -327,7 +327,7 @@ namespace Natomic.DeadlyAccel
                 var pid = player.IdentityId;
                 RegisterPlayer(player);
                 var pdata = players_lookup_[pid];
-                if (pdata.jetpack == null)
+                if (pdata.jetpack?.Character == null)
                 {
                     pdata.jetpack = player.Character.Components.Get<MyCharacterJetpackComponent>();
                 }
