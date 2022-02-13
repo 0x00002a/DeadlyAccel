@@ -326,6 +326,9 @@ Then to save it on disk (done automatically on world save, but a reload without 
                         settings_.HideHUDInCreative = conf_v;
                     }
                     break;
+				case "IgnoreCharacter":
+					ConfigValueCmd(cmd, ref settings_.IgnoreCharacter, value, "IgnoreCharacter");
+					break;
                 default:
                     var msg = $"Unknown config property: '{argsStr}'";
                     LogConfigValue(msg, true);
