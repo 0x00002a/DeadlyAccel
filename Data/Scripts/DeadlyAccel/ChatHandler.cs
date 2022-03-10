@@ -329,6 +329,9 @@ Then to save it on disk (done automatically on world save, but a reload without 
 				case "IgnoreCharacter":
 					ConfigValueCmd(cmd, ref settings_.IgnoreCharacter, value, "IgnoreCharacter");
 					break;
+                case "TimeScaling":
+                    ConfigValueCmd(cmd, ref settings_.TimeScaling, value, "TimeScaling");
+                    break;
                 default:
                     var msg = $"Unknown config property: '{argsStr}'";
                     LogConfigValue(msg, true);

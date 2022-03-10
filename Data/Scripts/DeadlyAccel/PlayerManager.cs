@@ -41,7 +41,8 @@ namespace Natomic.DeadlyAccel
     {
         public class PlayerData
         {
-            public int iframes;
+            public ulong first_damage_tick;
+            public ulong last_damage_tick;
             public double toxicity_buildup;
             public double lowest_toxic_decay;
 
@@ -174,6 +175,20 @@ namespace Natomic.DeadlyAccel
                     return true;
             }
             
+        }
+
+        private static double ScaleDmgByTime(double dmg, PlayerData pdata, Settings settings, ulong tick)
+        {
+            if (pdata.last_damage_tick != tick - 1)
+            {
+                pdata.first_damage_tick = tick;
+            }
+            pdata.last_damage_tick = tick;
+            var dt = pdata.last_damage_tick - pdata.first_damage_tick;
+
+            // calculation is (1/x) * scaling
+            return dt == 0 ? 0 : 
+                dmg * ((1.0 / (double)(pdata.last_damage_tick - pdata.first_damage_tick)) * settings.TimeScaling);
         }
 
 
@@ -313,7 +328,7 @@ namespace Natomic.DeadlyAccel
             return mod_dmg;
         }
 
-        public double Update(IMyPlayer player, Settings settings)
+        public double Update(IMyPlayer player, Settings settings, ulong tick)
         {
             try
             {
@@ -365,7 +380,8 @@ namespace Natomic.DeadlyAccel
 
                     if (grid_parent != null || !MovingUnderOwnPower(player.Character)) // SE reports accel values in the hundreds for walking around
                     {
-                        return CalcTotalDmg(player, accel, settings);
+                        var dmg = ScaleDmgByTime(CalcTotalDmg(player, accel, settings), pdata, settings, tick);
+                        return dmg < 1 ? 0 : dmg;
                     } 
                 }
 

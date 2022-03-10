@@ -115,6 +115,9 @@ namespace Natomic.DeadlyAccel
         [ProtoMember(10)] [DefaultValue(false)]
         public bool IgnoreCharacter; // Do not damage if not in cockpit
 
+        [ProtoMember(11)] [DefaultValue(20)] 
+        public int TimeScaling; // Ticks to have iframes for
+
         internal bool hide_hud_creative_;
         internal bool hide_hud_creative_set_ = false;
         internal List<string> ignored_grid_names_;

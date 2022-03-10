@@ -482,7 +482,7 @@ namespace Natomic.DeadlyAccel
                 }
                 else if (!p.IsBot && (IsSP || !IsClient))
                 {
-                    var dmg = player_.Update(p, settings_);
+                    var dmg = player_.Update(p, settings_, tick);
                     var toxic_lvls = Math.Ceiling(player_.ToxicBuildupFor(p));
                     if (MyAPIGateway.Utilities.IsDedicated || MyAPIGateway.Multiplayer.IsServer)
                     {
