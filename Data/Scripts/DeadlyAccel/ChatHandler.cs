@@ -22,6 +22,7 @@ using Sandbox.ModAPI;
 using SENetworkAPI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using VRageMath;
 
 namespace Natomic.DeadlyAccel
@@ -143,6 +144,9 @@ Then to save it on disk (done automatically on world save, but a reload without 
                                 OnConfigSaveServer(0, null, null, DateTime.MinValue);
                             }
                             break;
+                        case "list":
+                            OnConfigList();
+                            break;
                         default:
                             var msg = $"Unknown command: '{argsStr}'";
                             Log.Game.Error(msg);
@@ -190,6 +194,11 @@ Then to save it on disk (done automatically on world save, but a reload without 
             }
             PrintConfigValue(res);
 
+        }
+
+        private void OnConfigList()
+        {
+            PrintConfigValue(config_cmds.Keys.Aggregate((curr, total) => total + "\n" + curr));
         }
         private void ConfigValueCmd<T>(string cmd, ref T field, string value, string fieldName)
         {
