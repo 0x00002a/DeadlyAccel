@@ -182,7 +182,11 @@ namespace Natomic.DeadlyAccel
             if (dmg == 0)
             {
                 return 0;
+            } else if (settings.TimeScaling == 0)
+            {
+                return dmg;
             }
+            
             if (pdata.last_damage_tick < tick - DeadlyAccelSession.PLAYER_UPDATE_INTERVAL)
             {
                 pdata.first_damage_tick = tick;
