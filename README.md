@@ -94,28 +94,7 @@ your log files and steps to  reproduce it. You can find your log files at `%appd
 
 ## Reuse/License
 
-All of _my_ code in this repository/mod is licensed under the GNU GPLv3. Some parts of this code are not my own work and I cannot and do not relicense them.
-The parts of this code ***not*** licensed under the GNU GPv3 are listed below, if in doubt, all my code has the license at the top:
-
-- Anything in `SENetAPI` (SENetworkAPI)
-- Anything in `TextHudAPI` (TextHudAPI mod)
-
-Please contact the respective authors for redistribution rights for these parts of the mod. In regards to redistributing my code:
-
-This mod is GPLv3. That means you can reupload it or any mod that contains it _as long as_ you:
-
-- Keep all existing license notices intact
-- Credit me
-- List your changes (easiest way is with git and github repo)
-- Make _all_ the source code of the relevant mod available freely and publicly with no restrictions placed on its access.
-- Make your mod GPLv3 as well
-- Give me your first born child
-
-(ok that last one isn't actually legally binding)
-
-If in doubt, ask me in comments or the Keen discord (\@Natomic). 
-Full license is available [here](https://github.com/0x00002a/DeadlyAccel/blob/73343caac2195d5714dc6f9387f62a3693b0e9bf/LICENSE). I reserve the right to ask 
-for your mod to be yeeted if you have reused my mod without obeying the license.
+I've run out of space in the description, look at the license in the repo but tl;dr I will ask for your mod to be yeeted if you reuse without following the license and its GPLv3.
 
 ### Source
 
