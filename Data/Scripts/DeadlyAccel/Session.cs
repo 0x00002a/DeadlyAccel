@@ -46,6 +46,7 @@ namespace Natomic.DeadlyAccel
     public class DeadlyAccelSession : MySessionComponentBase
     {
         public static DeadlyAccelSession Instance; // the only way to access session comp from other classes and the only accepted static field.
+        public static ulong PLAYER_UPDATE_INTERVAL = 10; // ticks per update // ticks per update
 
         private const ushort ComChannelId = 15128;
         public const string ModName = "Deadly Acceleration";
@@ -532,7 +533,7 @@ namespace Natomic.DeadlyAccel
                     UpdatePlayersCache(); // Check every tick till we find something
                     players_need_update_ = false;
                 }
-                if (tick % 10 == 0)
+                if (tick % PLAYER_UPDATE_INTERVAL == 0)
                 {
                     PlayersUpdate();
 

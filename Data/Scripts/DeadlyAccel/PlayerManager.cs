@@ -179,7 +179,11 @@ namespace Natomic.DeadlyAccel
 
         private static double ScaleDmgByTime(double dmg, PlayerData pdata, Settings settings, ulong tick)
         {
-            if (pdata.last_damage_tick != tick - 1)
+            if (dmg == 0)
+            {
+                return 0;
+            }
+            if (pdata.last_damage_tick < tick - DeadlyAccelSession.PLAYER_UPDATE_INTERVAL)
             {
                 pdata.first_damage_tick = tick;
             }
@@ -188,7 +192,7 @@ namespace Natomic.DeadlyAccel
 
             // calculation is (1/x) * scaling
             return dt == 0 ? 0 : 
-                dmg * ((1.0 / (double)(pdata.last_damage_tick - pdata.first_damage_tick)) * settings.TimeScaling);
+                Math.Min(dmg, dmg / ((1 / (double)(pdata.last_damage_tick - pdata.first_damage_tick)) * settings.TimeScaling));
         }
 
 
