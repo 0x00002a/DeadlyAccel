@@ -82,7 +82,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
                      fix all the weird edge cases that cause this, hence this setting)
 - TimeScaling: Coefficent of the time scaling calculation to give some buffer time in which you will take reduced damage. The
                 calculation is damage / ((1/(ticks of acceleration)) * TimeScaling) and discards values of the denominator that are <10.
-                Set to 0 to disable
+                Set to 0 to disable (default: 2500)
 
 ";
 
