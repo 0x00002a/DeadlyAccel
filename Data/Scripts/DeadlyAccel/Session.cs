@@ -385,6 +385,7 @@ namespace Natomic.DeadlyAccel
                 IgnoredGridNames = new List<string>(),
                 IgnoreRespawnShips = true, // Vanilla respawn ships are death traps due to parachutes
                 IgnoreRelativeDampers = false,
+                IgnoreCharacter = false,
             };
 
             if (!MyAPIGateway.Multiplayer.IsServer)

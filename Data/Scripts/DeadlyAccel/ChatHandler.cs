@@ -200,6 +200,20 @@ Then to save it on disk (done automatically on world save, but a reload without 
         {
             PrintConfigValue(config_cmds.Keys.Aggregate((curr, total) => total + "\n" + curr));
         }
+        
+        private void ConfigPropCmd<T>(string cmd, Func<T> getter, Action<T> setter, string value, string fieldName)
+        {
+            if (cmd == "set")
+            {
+                setter((T)Convert.ChangeType(value, typeof(T)));
+                var msg = $"Successfully set {fieldName} to {value}";
+                LogConfigValue(msg);
+            }
+            else
+            {
+                PrintConfigValue(getter());
+            }
+        }
         private void ConfigValueCmd<T>(string cmd, ref T field, string value, string fieldName)
         {
             if (cmd == "set")
@@ -318,7 +332,7 @@ Then to save it on disk (done automatically on world save, but a reload without 
                     }
                 },
                 {"IgnoreCharacter", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.IgnoreCharacter, value, name) },
-                {"TimeScaling", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.TimeScaling, value, name) },
+                {"TimeScaling", (cmd, value, me) => name => me.ConfigPropCmd<int>(cmd, () => me.settings_.TimeScaling, p => me.settings_.TimeScaling = p, value, name) },
             };
         private void OnConfigEdit(string argsStr)
         {
