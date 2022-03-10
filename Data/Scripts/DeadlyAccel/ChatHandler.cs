@@ -288,57 +288,49 @@ Then to save it on disk (done automatically on world save, but a reload without 
             net_settings_.Push();
             Log.Game.Debug("Pushed config settings to server");
         }
+
+        private static Dictionary<string, Func<string, string, ChatHandler, Action<string>>> config_cmds =
+            new Dictionary<string, Func<string, string, ChatHandler, Action<string>>>
+            {
+                {"IgnoreJetpack", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.IgnoreJetpack, value, name) },
+                {"SafeMaximum", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.SafeMaximum, value, name) },
+                {"DamageScaleBase", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.DamageScaleBase, value, name) },
+                {"IgnoreRespawnShips", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.IgnoreRespawnShips, value, name) },
+                {"IgnoreRelativeDampers", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.IgnoreRelativeDampers, value, name) },
+                {"IgnoredGridNames", (cmd, value, me) => name => me.ConfigListCmd(cmd, me.settings_.IgnoredGridNames, value, name) },
+                {"HideHUDInCreative", (cmd, value, me) => name =>
+                    {
+                        if (!MyAPIGateway.Utilities.IsDedicated)
+                        {
+                            bool conf_v = me.settings_.HideHUDInCreative;
+                            me.ConfigValueCmd(cmd, ref conf_v, value, "HideHUDInCreative");
+                            me.settings_.HideHUDInCreative = conf_v;
+                        }
+                    }
+                },
+                {"IgnoreCharacter", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.IgnoreCharacter, value, name) },
+                {"TimeScaling", (cmd, value, me) => name => me.ConfigValueCmd(cmd, ref me.settings_.TimeScaling, value, name) },
+            };
         private void OnConfigEdit(string argsStr)
         {
             args_cache_.Clear();
             SplitArgs(argsStr, args_cache_);
             var args = args_cache_;
-            var successful = true;
 
             var cmd = args[0];
             var value = args.Count >= 3 ? args[2] : null;
             Log.Game.Debug($"Config arg: '{args[1]}'");
-            switch (args[1])
+            Func<string, string, ChatHandler, Action<string>> act;
+            if (config_cmds.TryGetValue(args[1], out act))
             {
-                case "IgnoreJetpack":
-                    ConfigValueCmd(cmd, ref settings_.IgnoreJetpack, value, "IgnoreJetpack");
-                    break;
-                case "SafeMaximum":
-                    ConfigValueCmd(cmd, ref settings_.SafeMaximum, value, "SafeMaximum");
-                    break;
-                case "DamageScaleBase":
-                    ConfigValueCmd(cmd, ref settings_.DamageScaleBase, value, "DamageScaleBase");
-                    break;
-                case "IgnoreRespawnShips":
-                    ConfigValueCmd(cmd, ref settings_.IgnoreRespawnShips, value, "IgnoreRespawnShips");
-                    break;
-                case "IgnoreRelativeDampers":
-                    ConfigValueCmd(cmd, ref settings_.IgnoreRelativeDampers, value, "IgnoreRelativeDampers");
-                    break;
-                case "IgnoredGridNames":
-                    ConfigListCmd(cmd, settings_.IgnoredGridNames, value, "IgnoredGridNames");
-                    break;
-                case "HideHUDInCreative":
-                    if (!MyAPIGateway.Utilities.IsDedicated)
-                    {
-                        bool conf_v = settings_.HideHUDInCreative;
-                        ConfigValueCmd(cmd, ref conf_v, value, "HideHUDInCreative");
-                        settings_.HideHUDInCreative = conf_v;
-                    }
-                    break;
-				case "IgnoreCharacter":
-					ConfigValueCmd(cmd, ref settings_.IgnoreCharacter, value, "IgnoreCharacter");
-					break;
-                case "TimeScaling":
-                    ConfigValueCmd(cmd, ref settings_.TimeScaling, value, "TimeScaling");
-                    break;
-                default:
-                    var msg = $"Unknown config property: '{argsStr}'";
-                    LogConfigValue(msg, true);
-                    successful = false;
-                    break;
+                act.Invoke(cmd, value, this).Invoke(args[1]);
+                SyncConfig();
             }
-            if (successful) { SyncConfig(); }
+            else
+            {
+                var msg = $"Unknown config property: '{argsStr}'";
+                LogConfigValue(msg, true);
+            }
         }
         private void OnHelp(string args)
         {
