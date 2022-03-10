@@ -191,8 +191,25 @@ namespace Natomic.DeadlyAccel
             var dt = pdata.last_damage_tick - pdata.first_damage_tick;
 
             // calculation is (1/x) * scaling
-            return dt == 0 ? 0 : 
-                Math.Min(dmg, dmg / ((1 / (double)(pdata.last_damage_tick - pdata.first_damage_tick)) * settings.TimeScaling));
+            if (dt == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                var scaled = (1 / (double)dt) * settings.TimeScaling;
+                if (scaled > 120)
+                {
+                    return 0;
+                } else if (scaled < 10)
+                {
+                    return dmg;
+                }
+                else
+                {
+                    return dmg / scaled;
+                }
+            }
         }
 
 

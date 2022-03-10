@@ -122,7 +122,7 @@ namespace Natomic.DeadlyAccel
             get { return time_scaling_; }
         } // Time based damage scaling
 
-        private int time_scaling_ = 20;
+        private int time_scaling_ = 2500;
         internal bool hide_hud_creative_;
         internal bool hide_hud_creative_set_ = false;
         internal List<string> ignored_grid_names_;
