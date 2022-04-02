@@ -174,35 +174,56 @@ namespace Natomic.DeadlyAccel
             Log.UI.Add(new LogFilter { MaxLogLevel = LogType.Error, Sink = new ChatLog { ModName = ModName } });
 
         }
+
+        private static void ReportCallbackErr(string name, Exception e)
+        {
+            Log.Game.Error($"Exception in {name}, this is a bug please report");
+            Log.Game.Error(e);
+        }
        
         private void OnPlayerSpawn(long pid)
         {
-            if (player_cache_.ContainsKey(pid))
+            try
             {
-                var p = player_cache_[pid];
-                if (hud != null)
+                if (player_cache_.ContainsKey(pid))
                 {
-                    hud.ToxicityLevels = player_.ToxicBuildupFor(p);
+                    var p = player_cache_[pid];
+                    if (hud != null)
+                    {
+                        hud.ToxicityLevels = player_.ToxicBuildupFor(p);
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                ReportCallbackErr("OnPlayerSpawn", e);
             }
         }
         private void OnPlayerHealthRecharge(long pid, int type, float amount)
         {
-            float toxic_decay_multiplier = 100;
-            switch (type)
+            try
             {
-                case 1: // Medbay
-                    toxic_decay_multiplier = 100;
-                    break;
-                case 0: // Survival kit
-                    toxic_decay_multiplier = 25;
-                    break;
+                float toxic_decay_multiplier = 100;
+                switch (type)
+                {
+                    case 1: // Medbay
+                        toxic_decay_multiplier = 100;
+                        break;
+                    case 0: // Survival kit
+                        toxic_decay_multiplier = 25;
+                        break;
+                }
+
+                player_.ApplyToxicityDecay(pid, toxic_decay_multiplier);
+                if (!IsSP)
+                {
+                    var player = player_cache_[pid];
+                    SendToxicUpdate(player, player_.ToxicBuildupFor(player));
+                }
             }
-            player_.ApplyToxicityDecay(pid, toxic_decay_multiplier);
-            if (!IsSP)
+            catch (Exception e)
             {
-                var player = player_cache_[pid];
-                SendToxicUpdate(player, player_.ToxicBuildupFor(player));
+                ReportCallbackErr("OnPlayerHealthRecharge", e);
             }
         }
         private void SendToxicUpdate(IMyPlayer p, double t)
@@ -419,11 +440,20 @@ namespace Natomic.DeadlyAccel
         }
         public void OnPlayerDC(long playerId)
         {
-            if (player_cache_.ContainsKey(playerId)) {
-                player_.DeregisterPlayer(player_cache_[playerId]);
-                player_cache_.Remove(playerId);
+            try
+            {
+                if (player_cache_.ContainsKey(playerId))
+                {
+                    player_.DeregisterPlayer(player_cache_[playerId]);
+                    player_cache_.Remove(playerId);
+                }
+
+                Log.Game.Info($"Player disconnected: {playerId}");
             }
-            Log.Game.Info($"Player disconnected: {playerId}");
+            catch (Exception e)
+            {
+                ReportCallbackErr("OnPlayerDC", e);
+            }
         }
         public static string FormatCushionLookup(string typeid, string subtypeid)
         {
