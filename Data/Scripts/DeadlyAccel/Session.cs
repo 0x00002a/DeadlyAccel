@@ -420,8 +420,8 @@ namespace Natomic.DeadlyAccel
         public void OnPlayerDC(long playerId)
         {
             if (player_cache_.ContainsKey(playerId)) {
-                player_cache_.Remove(playerId);
                 player_.DeregisterPlayer(player_cache_[playerId]);
+                player_cache_.Remove(playerId);
             }
             Log.Game.Info($"Player disconnected: {playerId}");
         }

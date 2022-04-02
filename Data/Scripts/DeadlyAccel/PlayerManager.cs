@@ -443,6 +443,11 @@ namespace Natomic.DeadlyAccel
         }
         public void DeregisterPlayer(IMyPlayer p)
         {
+            if (!players_lookup_.ContainsKey(p.IdentityId))
+            {
+                Log.Game.Debug("Tried to deregister non-registered player?");
+                return;
+            }
             SavePlayerData(p);
             players_lookup_.Remove(p.IdentityId);
         }
